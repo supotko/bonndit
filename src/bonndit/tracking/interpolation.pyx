@@ -430,7 +430,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 		self.dist = np.zeros((3,), dtype=DTYPE)
 		self.r = kwargs['r']
 		self.rank = kwargs['rank']
-		print(self.sigma_2, self.sigma_1, self.r)
+		#print(self.sigma_2, self.sigma_1, self.r)
 
 
 	cdef void trilinear(self, double[:] point) : # nogil except *:
@@ -523,8 +523,8 @@ cdef class TrilinearFODFWatson(Interpolation):
 				self.x_v2[0,i*4+3] = self.x_v2[0,i*4+3] - 0.5585053606381855 # heuristic (phi - 25 degrees)
 			
 			#with gil:
-			print("NEW STREAMLINE")
-			print("NEW VALS",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
+			#print("NEW STREAMLINE")
+			#print("NEW VALS",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
 
 
 		#with gil:
