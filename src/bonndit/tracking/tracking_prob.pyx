@@ -356,8 +356,8 @@ cpdef tracking_all(vector_field, wm_mask, seeds, tracking_parameters, postproces
 			features[k,:, 0, 1, saving['features']['seedpoint']] = 1
 	
 		# if interpolation is set to TrilinearFODFWatson create new interpolation object
-		#if tracking_parameters['interpolation'] == "TrilinearFODFWatson":
-		#	interpolate = TrilinearFODFWatson(vector_field, dim[2:5], directionGetter, **trilinear_parameters)
+		if tracking_parameters['interpolation'] == "TrilinearFODFWatson":
+			interpolate = TrilinearFODFWatson(vector_field, dim[2:5], directionGetter, **trilinear_parameters)
 
 	#	print("1", np.asarray(features[k,j,:,0]))
 	#	print("1", np.asarray(features[k,j,:,1]))
