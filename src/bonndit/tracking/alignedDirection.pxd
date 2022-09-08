@@ -10,22 +10,30 @@ cdef class Probabilities:
 	cdef double[:,:] test_vectors
 	cdef void random_choice(self, double[:]) # nogil  except *
 	cdef void aligned_direction(self, double[:,:], double[:]) # nogil  except *
-	cdef void calculate_probabilities(self, double[:,:], double[:]) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
+	cdef void calculate_watson_probabilities(self, double[:,:], double[:], double[:], double[:], double[:]) # nogil except *
 
 cdef class Gaussian(Probabilities):
-	cdef void calculate_probabilities(self, double[:,:], double[:]) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
 
 cdef class Laplacian(Probabilities):
-	cdef void calculate_probabilities(self, double[:,:], double[:]) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
 
 cdef class ScalarOld(Probabilities):
-	cdef void calculate_probabilities(self, double[:,:], double[:]) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
 
 cdef class ScalarNew(Probabilities):
-	cdef void calculate_probabilities(self, double[:,:], double[:]) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
 
 cdef class Deterministic(Probabilities):
-	cdef void calculate_probabilities(self, double[:,:], double[:]) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
 
 cdef class Deterministic2(Probabilities):
-	cdef void calculate_probabilities(self, double[:,:], double[:]) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
+cdef class Watson(Probabilities):
+	cdef double[:,:,:,:] kappa_field
+	cdef void watson_config(self, double[:,:,:,:]) # nogil except *
+	cdef double poly_kummer(self, double) # nogil  except *
+	cdef double poly_watson(self, double[:], double[:], double) # nogil except *
+	cdef void mc_random_direction(self, double[:], double[:], double) # nogil except *
+	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *

@@ -3,15 +3,16 @@
 import sys
 import nrrd
 sys.path.append('.')
-from .alignedDirection cimport  Gaussian, Laplacian, ScalarOld, ScalarNew, Probabilities, Deterministic,Deterministic2
+from .alignedDirection cimport  Gaussian, Laplacian, ScalarOld, ScalarNew, Probabilities, Deterministic,Deterministic2, Watson
 from .ItoW cimport Trafo
 from .stopping cimport Validator
 from .integration cimport  Euler, Integration, EulerUKF, RungeKutta
-from .interpolation cimport  FACT, Trilinear, Interpolation, UKFFodf, UKFMultiTensor, TrilinearFODF
+from .interpolation cimport  FACT, Trilinear, Interpolation, UKFFodf, UKFMultiTensor, TrilinearFODF, TrilinearFODFWatson
 from bonndit.utilc.cython_helpers cimport mult_with_scalar, sum_c, sum_c_int, set_zero_vector, sub_vectors, \
 	angle_deg, norm
 import numpy as np
 from tqdm import tqdm
+from bonndit.utilc.myext cimport mw_openmp_single_o4c, mw_openmp_multc, mw_openmp_mult_o4c
 
 ctypedef struct possible_features:
 	int chosen_angle
@@ -204,6 +205,64 @@ cpdef tracking_all(vector_field, wm_mask, seeds, tracking_parameters, postproces
 	cdef Trafo trafo
 	cdef Probabilities directionGetter
 	cdef Validator validator
+
+	cdef Watson temp_watson
+	cdef double[:,:,:,:] kappa_field
+
+
+	# cdef double[:] dipy_v = np.zeros((15,))
+	# cdef double[:] est_signal_v = np.zeros((15,))
+	# cdef double[:] x_v = np.array([ 		2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,
+    # 								 		3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,
+    # 								 		1.24552913, -2.84815265]) #nonzero_csd_init[:amount].copy()
+	# cdef double[:] signal_v = np.array([	0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,
+    # 								 		-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464,
+    # 								 		0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ,
+    # 								 		-0.0071501 , -0.0063297 ,  0.00019099,  0.00813005,  0.00532886,
+    # 								 		-0.01496287,  0.00619936, -0.01115468, -0.00603983, -0.01041317,
+    # 								 		0.00047331, -0.00409659, -0.0191022 ])
+	# cdef double[:,:,:] pysh_v = np.zeros((2,5,5))
+	# cdef double[:,:,:] rot_pysh_v = np.zeros((2,5,5))
+	# cdef double[:] angles_v = np.zeros((3,))
+	# cdef double[:,:,:] dj_v = np.zeros((5,5,5))
+	# cdef double[:] loss_v = np.zeros((1,))
+	# print("x before",x_v[0],x_v[1],x_v[2],x_v[3],"fodf",signal_v[1],signal_v[2],signal_v[3])
+	# mw_openmp_single_o4c(x_v, signal_v, est_signal_v, dipy_v, pysh_v, rot_pysh_v, angles_v, loss_v, 3)
+	# print("x after",x_v[0],x_v[1],x_v[2],x_v[3],"loss",loss_v[0])
+
+	num_of_dir = 3
+
+	# cdef int amount = 1
+	# cdef double[:,:,:] dj = np.zeros((5,5,5))
+	# cdef double[:,:] x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
+	# cdef double[:,:] signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ,-0.0071501 , -0.0063297 ,  0.00019099,  0.00813005,  0.00532886,-0.01496287,  0.00619936, -0.01115468, -0.00603983, -0.01041317, 0.00047331, -0.00409659, -0.0191022 ]])
+	# cdef double[:] loss = np.zeros(amount)
+	# cdef double[:,:] angles_v = np.zeros((amount, 3))
+	# cdef double[:,:] dipy_v = np.zeros((amount, 28))
+	# cdef double[:,:,:,:] pysh_v = np.zeros((amount, 2, 7, 7))
+	# cdef double[:,:,:,:] rot_pysh_v = np.zeros_like(pysh_v)
+	# cdef double[:,:] est_signal = np.zeros((amount, 28))
+
+	cdef int amount = 1
+	cdef double[:,:,:] dj = np.zeros((5,5,5))
+	cdef double[:,:] x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
+	cdef double[:,:] signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ]])
+	cdef double[:] loss = np.zeros(amount)
+	cdef double[:,:] angles_v = np.zeros((amount, 3))
+	cdef double[:,:] dipy_v = np.zeros((amount, 15))
+	cdef double[:,:,:,:] pysh_v = np.zeros((amount, 2, 5, 5))
+	cdef double[:,:,:,:] rot_pysh_v = np.zeros_like(pysh_v)
+	cdef double[:,:] est_signal = np.zeros((amount, 15))
+
+	print("x before",x_v[0,0],x_v[0,1],x_v[0,2],x_v[0,3])
+	mw_openmp_mult_o4c(x_v, signals, est_signal, dipy_v, pysh_v, rot_pysh_v, angles_v, dj, loss, amount, 4, 3)
+	print("x after",x_v[0,0],x_v[0,1],x_v[0,2],x_v[0,3],"loss",loss[0])
+
+	# modify vector_field if Watson to split into directions and kappa
+	if tracking_parameters['prob'] == "Watson":
+		kappa_field = vector_field[0,:,:,:,:]
+		vector_field = vector_field[1:,:,:,:,:]
+
 	#select appropriate model
 	if tracking_parameters['prob'] == "Gaussian":
 		directionGetter = Gaussian(0, tracking_parameters['variance'])
@@ -217,6 +276,10 @@ cpdef tracking_all(vector_field, wm_mask, seeds, tracking_parameters, postproces
 		directionGetter = Deterministic(tracking_parameters['expectation'], tracking_parameters['variance'])
 	elif tracking_parameters['prob'] == "Deterministic2":
 		directionGetter = Deterministic2(tracking_parameters['expectation'], tracking_parameters['variance'])
+	elif tracking_parameters['prob'] == "Watson":
+		temp_watson = Watson(tracking_parameters['expectation'], tracking_parameters['variance'])
+		temp_watson.watson_config(kappa_field)
+		directionGetter = temp_watson
 	else:
 		logging.error('Gaussian or Laplacian or Scalar are available so far. ')
 		return 0
@@ -242,6 +305,8 @@ cpdef tracking_all(vector_field, wm_mask, seeds, tracking_parameters, postproces
 		interpolate = Trilinear(vector_field, dim[2:5], directionGetter, **tracking_parameters)
 	elif tracking_parameters['interpolation'] == "TrilinearFODF":
 		interpolate = TrilinearFODF(vector_field, dim[2:5], directionGetter, **trilinear_parameters)
+	elif tracking_parameters['interpolation'] == "TrilinearFODFWatson":
+		interpolate = TrilinearFODFWatson(vector_field, dim[2:5], directionGetter, **trilinear_parameters)
 	else:
 		logging.error('FACT, Triliniear or UKF for MultiTensor and low rank approximation are available so far.')
 		return 0
@@ -289,6 +354,11 @@ cpdef tracking_all(vector_field, wm_mask, seeds, tracking_parameters, postproces
 		if saving['features']['seedpoint'] >= 0:
 			features[k,:, 0, 0, saving['features']['seedpoint']] = 1
 			features[k,:, 0, 1, saving['features']['seedpoint']] = 1
+	
+		# if interpolation is set to TrilinearFODFWatson create new interpolation object
+		#if tracking_parameters['interpolation'] == "TrilinearFODFWatson":
+		#	interpolate = TrilinearFODFWatson(vector_field, dim[2:5], directionGetter, **trilinear_parameters)
+
 	#	print("1", np.asarray(features[k,j,:,0]))
 	#	print("1", np.asarray(features[k,j,:,1]))
 		#Do the tracking for this seed with the direction

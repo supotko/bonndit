@@ -2,7 +2,7 @@
 #cython: language_level=3, boundscheck=False, wraparound=False, warn.unused=True, warn.unused_args=True, warn.unused_results=True
 cimport cython
 import numpy as np
-from libc.math cimport pow, floor, acos, pi
+from libc.math cimport pow, floor, acos, pi, sqrt, atan2, sin, cos
 from libc.stdio cimport printf
 from .blas_lapack cimport *
 
@@ -64,6 +64,22 @@ cdef world2sphere(double x,double y, double z):
 	else:
 		raise Exception()
 	return r, sigma, phi
+
+cdef void cart2sphere(double[:] cart, double[:] sphere) nogil:
+	cdef double r
+	r = sqrt(cart[0] * cart[0] + cart[1] * cart[1] + cart[2] * cart[2])
+	if r > 0:
+		sphere[0] = acos(cart[2]/r)
+	else:
+		sphere[0] = 0
+	sphere[1] = atan2(cart[1], cart[0])
+
+cdef void sphere2cart(double[:] sphere, double[:] cart) nogil:
+	cdef double sin_theta
+	sin_theta = sin(sphere[0])
+	cart[0] = cos(sphere[1]) * sin_theta
+	cart[1] = sin(sphere[1]) * sin_theta
+	cart[2] = cos(sphere[0])
 
 cdef orthonormal_from_sphere(double sigma, double phi):
 	return [sphere2world(1, sigma, phi),sphere2world(1, sigma + np.pi/2, phi),np.array([-np.sin(sigma)*np.sin(phi),np.sin(sigma)*np.cos(phi), 0])]

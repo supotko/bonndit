@@ -67,6 +67,53 @@ cdef class TrilinearFODF(Interpolation):
 	cdef void neigh(self, double[:] point) # nogil except *
 	cdef int interpolate(self, double[:] point, double[:] old_dir, int r) # nogil except *
 
+cdef class TrilinearFODFWatson(Interpolation):
+	cdef double[:,:,:,:] data
+	cdef double[:] fodf
+	cdef double[:] fodf1
+	cdef double[:] empty
+
+	# cdef double[:] x_v
+	# cdef double[:] dipy_v
+	# cdef double[:] signal_v
+	# cdef double[:] est_signal_v
+	# cdef double[:,:,:] pysh_v
+	# cdef double[:,:,:] rot_pysh_v
+	# cdef double[:] angles_v
+	# cdef double[:,:,:] dj_v
+	# cdef double[:] loss_v
+
+	cdef int amount
+	cdef double[:,:,:] dj
+	cdef double[:,:] x_v
+	cdef double[:,:] x_v2
+	cdef double[:,:] signals
+	cdef double[:] loss
+	cdef double[:,:] angles_v
+	cdef double[:,:] dipy_v
+	cdef double[:,:,:,:] pysh_v
+	cdef double[:,:,:,:] rot_pysh_v
+	cdef double[:,:] est_signal
+	cdef double[:] kappas
+	cdef double[:] weights
+
+	cdef double sigma_1
+	cdef double sigma_2
+	cdef int inc
+	cdef double[:] point_diff
+	cdef double[:,:] trafo
+	cdef double[:] dist
+	cdef double[:] length
+	cdef bint auto
+	cdef double[:,:] best_dir_approx
+	cdef double r
+	cdef int rank
+	cdef double[:,:] vlinear
+	cdef int[:,:] neighbors
+	cdef void trilinear(self, double[:] point) # nogil except *
+	cdef void neigh(self, double[:] point) # nogil except *
+	cdef int interpolate(self, double[:] point, double[:] old_dir, int r) # nogil except *
+
 cdef class UKF(Interpolation):
 	cdef double[:] mean
 	cdef double[:,:] P

@@ -10,7 +10,7 @@ from bonndit.utilc.cython_helpers cimport add_pointwise, floor_pointwise_matrix,
 	angle_deg, set_zero_matrix_int, point_validator
 import numpy as np
 import time
-from bonndit.utilc.cython_helpers cimport dm2toc
+from bonndit.utilc.cython_helpers cimport dm2toc, cart2sphere, sphere2cart
 from bonndit.utilc.hota cimport hota_4o3d_sym_norm, hota_4o3d_sym_eval
 from bonndit.utilc.lowrank cimport approx_initial
 from .ItoW cimport Trafo
@@ -18,10 +18,15 @@ cdef int[:,:] permute_poss = np.array([[0,1,2],[0,2,1], [1,0,2], [1,2,0], [2,1,0
 from .kalman.model cimport AbstractModel, fODFModel, MultiTensorModel
 from .kalman.kalman cimport Kalman
 from .alignedDirection cimport Probabilities
-from libc.math cimport pow, pi, acos, floor, fabs,fmax, exp
+from libc.math cimport pow, pi, acos, floor, fabs,fmax, exp, abs, log
 from libc.stdio cimport printf
+from libc.stdlib cimport rand, srand, RAND_MAX
+from libc.time cimport time
 from bonndit.utilc.cython_helpers cimport fa, dctov, dinit
 from bonndit.utilc.blas_lapack cimport *
+from bonndit.utils.esh import esh_to_sym
+from bonndit.utilc.myext cimport mw_openmp_single_o4c, mw_openmp_multc, mw_openmp_mult_o4c
+
 DTYPE = np.float64
 cdef double _lambda_min = 0.1
 ###
@@ -39,6 +44,7 @@ cdef double[:] placeholder = np.zeros((3,), dtype=DTYPE)
 
 
 cdef class Interpolation:
+	srand(time(NULL))
 
 	def __cinit__(self, double[:,:,:,:,:]  vector_field, int[:] grid, Probabilities probClass, **kwargs):
 		self.vector_field = vector_field
@@ -156,7 +162,7 @@ cdef class FACT(Interpolation):
 			self.set_vector(self.best_ind, i)
 			mult_with_scalar(self.best_dir[i], l, self.vector)
 		#printf('%i \n', thread_id)<
-		self.prob.calculate_probabilities(self.best_dir, old_dir)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
 		mult_with_scalar(self.next_dir, 1, self.prob.best_fit)
 		return 0
 
@@ -309,11 +315,263 @@ cdef class TrilinearFODF(Interpolation):
 
 		for i in range(3):
 			mult_with_scalar(self.best_dir[i], pow(self.length[i], 1/4), self.best_dir_approx[:,i])
-		self.prob.calculate_probabilities(self.best_dir, old_dir)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
 		cblas_dcopy(3, &self.prob.best_fit[0], 1, &self.next_dir[0],1)
 		return 0
 
 
+cdef class TrilinearFODFWatson(Interpolation):
+	def __cinit__(self, double[:,:,:,:,:]  vector_field, int[:] grid, Probabilities probClass, **kwargs):
+		super(TrilinearFODFWatson, self).__init__(vector_field, grid, probClass, **kwargs)
+		self.data = kwargs['data']
+		self.fodf = np.zeros((16,))
+		self.fodf1 = np.zeros((16,))
+		self.length = np.zeros((3,))
+		self.inc= np.int32(np.prod(kwargs['data'].shape[1:]))
+		self.empty = np.zeros((15,))
+		#self.x_v = np.zeros((12,))
+		# self.dipy_v = np.zeros((15,))
+		# #self.signal_v = np.zeros((15,))
+		# self.est_signal_v = np.zeros((15,))
+		# self.x_v = np.array([ 		2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,
+        # 							3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,
+        # 							1.24552913, -2.84815265]) #nonzero_csd_init[:amount].copy()
+		# self.signal_v = np.array([	0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,
+       	# 							-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464,
+       	# 							0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ,
+       	# 							-0.0071501 , -0.0063297 ,  0.00019099,  0.00813005,  0.00532886,
+       	# 							-0.01496287,  0.00619936, -0.01115468, -0.00603983, -0.01041317,
+       	# 							0.00047331, -0.00409659, -0.0191022 ])
+		# self.pysh_v = np.zeros((2,5,5))
+		# self.rot_pysh_v = np.zeros((2,5,5))
+		# self.angles_v = np.zeros((3,))
+		# self.dj_v = np.zeros((5,5,5))
+		# self.loss_v = np.zeros((1,))
+
+		# self.amount = 1#nonzero_csd_init.shape[0]#1000
+		# self.dj = np.zeros((5,5,5))
+		# self.x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
+		# self.signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ,-0.0071501 , -0.0063297 ,  0.00019099,  0.00813005,  0.00532886,-0.01496287,  0.00619936, -0.01115468, -0.00603983, -0.01041317, 0.00047331, -0.00409659, -0.0191022 ]])
+		# self.loss = np.zeros(self.amount)
+		# self.angles_v = np.zeros((self.amount, 3))
+		# self.dipy_v = np.zeros((self.amount, 28))
+		# self.pysh_v = np.zeros((self.amount, 2, 7, 7))
+		# self.rot_pysh_v = np.zeros_like(self.pysh_v)
+		# self.est_signal = np.zeros((self.amount, 28))
+
+		self.amount = 1#nonzero_csd_init.shape[0]#1000
+		self.dj = np.zeros((5,5,5))
+		#self.x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
+		#self.signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ]])
+		self.x_v2 = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
+		self.x_v = np.zeros((self.amount,12))
+		self.signals = np.zeros((self.amount,15))
+		self.loss = np.zeros(self.amount)
+		self.angles_v = np.zeros((self.amount, 3))
+		self.dipy_v = np.zeros((self.amount, 15))
+		self.pysh_v = np.zeros((self.amount, 2, 5, 5))
+		self.rot_pysh_v = np.zeros_like(self.pysh_v)
+		self.est_signal = np.zeros((self.amount, 15))
+		self.kappas = np.zeros((3,))
+		self.weights = np.zeros((3,))
+
+
+		if kwargs['r'] == -1:
+			kwargs['r'] = 2
+			while True:
+				kwargs['r'] += 1
+				if len(np.array(
+					[[i, j, k] for i in range(-int(kwargs['r']), int(kwargs['r']) + 1) for j in range(-int(kwargs['r']), int(kwargs['r']) + 1) for k in
+					 range(-int(kwargs['r']), int(kwargs['r']) + 1) if np.linalg.norm(np.dot(kwargs['trafo'], np.array([i, j, k]))) <= kwargs['r']],
+					dtype=np.intc)) >= 90:
+					break
+			self.auto = True
+			self.r = kwargs['r']
+		else:
+			self.auto = False
+			self.r = kwargs['r']
+
+
+		if kwargs['sigma_2'] == 0:
+			self.sigma_2 = ((np.linalg.norm(kwargs['trafo'] @ np.array((1, 0, 0))) + np.linalg.norm(kwargs['trafo'] @ np.array((0, 1, 0))) + np.linalg.norm(kwargs['trafo'] @ np.array((0, 0, 1)))) / 3) ** 2
+		else:
+			self.sigma_2 = kwargs['sigma_2']
+		self.neighbors = np.array(sorted([[i, j, k] for i in range(-int(kwargs['r']), 1 + int(kwargs['r'])) for j in
+										  range(-int(kwargs['r']), 1 + int(kwargs['r'])) for k in
+										  range(-int(kwargs['r']), 1 + int(kwargs['r']))],
+										 key=lambda x: np.linalg.norm(kwargs['trafo'] @ x)), dtype=np.int32)
+		if kwargs['sigma_1'] == 0:
+			skip = np.zeros(kwargs['data'].shape[1:])
+			neighbors = np.array([x for x in self.neighbors if np.linalg.norm(kwargs['trafo'] @ x) <= kwargs['r']])
+			var = np.zeros((len(neighbors), ) + kwargs['data'].shape[1:])
+
+			for i,j,k in tqdm(np.ndindex(kwargs['data'].shape[1:]), total=np.prod(kwargs['data'].shape[1:])):
+				if kwargs['data'][0, i,j,k] == 0.0:
+					skip[i,j,k] = 1
+					continue
+
+				for index in range(neighbors.shape[0]):
+					if kwargs['data'].shape[1] > i + neighbors[index, 0] >= 0 \
+						and kwargs['data'].shape[2] > j + neighbors[index, 1] >= 0 \
+						and kwargs['data'].shape[3] > k + neighbors[index, 2] >= 0:
+						sub_vectors(isoten, kwargs['data'][1:, i,j,k], kwargs['data'][1:, i + neighbors[index, 0], j + neighbors[index, 1], k + neighbors[index, 2]])
+						var[index, i,j,k] = hota_4o3d_sym_norm(isoten)
+					else:
+						skip[i,j,k] = 1
+			#nu = np.mean(var[:, skip == 0])
+			self.sigma_1 = np.median(var[:, skip == 0])
+		else:
+			self.sigma_1 = kwargs['sigma_1']
+		self.best_dir_approx = np.zeros((3,3))
+
+		self.point_diff = np.zeros((3,), dtype=DTYPE)
+		self.vlinear = np.zeros((8, kwargs['data'].shape[0]))
+		self.trafo = kwargs['trafo']
+		self.dist = np.zeros((3,), dtype=DTYPE)
+		self.r = kwargs['r']
+		self.rank = kwargs['rank']
+		print(self.sigma_2, self.sigma_1, self.r)
+
+
+	cdef void trilinear(self, double[:] point) : # nogil except *:
+		cdef int i, j, k, m,n,o
+		for i in range(8):
+			j = <int> floor(i / 2) % 2
+			k = <int> floor(i / 4) % 2
+			m = <int> point[0] + i%2
+			n = <int> point[1] + j
+			o = <int> point[2] + k
+
+			dm2toc(&self.vlinear[i, 0], self.data[:, m,n,o],  self.vlinear.shape[1])
+		for i in range(4):
+			cblas_dscal(self.vlinear.shape[1], (1 + floor(point[2]) - point[2]), &self.vlinear[i, 0], 1)
+			cblas_daxpy(self.vlinear.shape[1], (point[2] - floor(point[2])), &self.vlinear[4+i, 0], 1, &self.vlinear[i,0], 1)
+		for i in range(2):
+			cblas_dscal(self.vlinear.shape[1], (1 + floor(point[1]) - point[1]), &self.vlinear[i, 0], 1)
+			cblas_daxpy(self.vlinear.shape[1], (point[1] - floor(point[1])), &self.vlinear[2 + i, 0], 1, &self.vlinear[i, 0], 1)
+		cblas_dscal(self.vlinear.shape[1], (1 + floor(point[0]) - point[0]), &self.vlinear[0, 0], 1)
+		cblas_daxpy(self.vlinear.shape[1], (point[0] - floor(point[0])), &self.vlinear[1,0], 1, &self.vlinear[0,0], 1)
+		cblas_dcopy(self.vlinear.shape[1], &self.vlinear[0,0], 1, &self.fodf[0], 1)
+
+	cdef void neigh(self, double[:] point) : # nogil except *:
+		cdef double x, scale = 0, dis=0, distance =0
+		cdef int i, index, p_0 = <int> point[0], p_1 = <int> point[1], p_2 = <int> point[2], pw_0, pw_1, pw_2
+		self.trilinear(point)
+		cblas_dscal(16,0, &self.fodf1[0],1)
+		for index in range(<int> self.neighbors.shape[0]):
+			pw_0 = p_0 + self.neighbors[index, 0]
+			pw_1 = p_1 + self.neighbors[index, 1]
+			pw_2 = p_2 + self.neighbors[index, 2]
+			for i in range(3):
+				self.point_diff[i] = self.neighbors[index, i] - point[i]%1
+			cblas_dgemv(CblasRowMajor, CblasNoTrans, 3,3,1, &self.trafo[0,0], 3, &self.point_diff[0], 1, 0, &self.dist[0], 1)
+			distance = cblas_dnrm2(3, &self.dist[0], 1)
+			if distance > self.r or (index>27 and self.auto):
+				break
+			if self.data.shape[1] > pw_0 >= 0 and self.data.shape[2] > pw_1 >= 0 and self.data.shape[3] > pw_2 >= 0:
+				sub_vectors(self.empty, self.fodf[1:], self.data[1:, pw_0, pw_1, pw_2])
+				x = hota_4o3d_sym_norm(self.empty)
+				dis = exp(-(x*x)/(self.sigma_1*self.sigma_1))# - distance/self.sigma_2)
+				scale += dis
+				for i in range(16):
+					self.fodf1[i] += dis*self.data[i, pw_0, pw_1, pw_2]
+				#cblas_daxpy(16, dis, &self.data[0, pw_0, pw_1, pw_2], 1, &self.fodf1[0], 1)
+		if scale > 0:
+			mult_with_scalar(self.fodf, 1/scale, self.fodf1)
+
+	cdef int interpolate(self, double[:] point, double[:] old_dir, int r) : # nogil except *:
+	#	with gil: print(np.array(old_dir))
+		# Initialize with last step. Except we are starting again.
+		self.point_world[:3] = point
+		self.point_world[3] = 1
+		cblas_dgemv(CblasRowMajor, CblasNoTrans, 4,4,1,&self.inv_trafo[0,0], 4, &self.point_world[0], 1, 0, &self.point_index[0],1)
+		if r==0:
+			cblas_dscal(9,0, &self.best_dir[0,0],1)
+			cblas_dscal(3,0, &self.length[0],1)
+		# If self.r==0: Interpolate trilinear else: calculate average over neighborhood.
+
+		cdef int i
+		if self.r==0:
+			self.trilinear(self.point_index[:3])
+		else:
+			self.neigh(self.point_index[:3])
+		if self.fodf[0] == 0:
+			return -1
+		set_zero_matrix(tens)
+	#	set_zero_vector(valsec)
+	#	set_zero_vector(val)
+
+		# if no previous directions are given (initial state) use low rank approx for initial directions
+		if norm(self.next_dir) == 0:
+			#with gil:
+			self.fodf1 = esh_to_sym(self.fodf[1:])
+			approx_initial(self.length, self.best_dir_approx, tens, self.fodf1[:-1], self.rank, valsec, val,der, testv, anisoten, isoten)
+
+			for i in range(3):
+				mult_with_scalar(self.best_dir[i], 1/norm(self.best_dir_approx[:,i]), self.best_dir_approx[:,i])
+				#with gil:
+				#	print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
+				# configure initial x for watson estimation
+				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (4.9 - 0.1) + 0.1 # weight init between 0.1 and 4.9
+				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (20 - 8) + 8 # kappa init between 8 and 20
+
+				# flip y and z to align with sh:
+				#self.best_dir[i,1] = -self.best_dir[i,1]
+				#self.best_dir[i,2] = -self.best_dir[i,2]
+
+				cart2sphere(self.best_dir[i], self.x_v2[0,i*4+2:i*4+4]) # set initial directions in spherical (theta, phi)
+				self.x_v2[0,i*4+3] = self.x_v2[0,i*4+3] - 0.5585053606381855 # heuristic (phi - 25 degrees)
+			
+			#with gil:
+			print("NEW STREAMLINE")
+			print("NEW VALS",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
+
+
+		#with gil:
+		#	print(self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
+		
+		# with gil:
+		# 	print("x before",self.x_v[0],self.x_v[1],self.x_v[2],self.x_v[3],"fodf",self.fodf[1],self.fodf[2],self.fodf[3])
+		# #mw_openmp_single_o4c(self.x_v, self.fodf[1:], self.est_signal_v, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss_v, 3)
+		# mw_openmp_single_o4c(self.x_v, self.signal_v, self.est_signal_v, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss_v, 3)
+
+		# with gil:
+		# 	print("x after",self.x_v[0],self.x_v[1],self.x_v[2],self.x_v[3],"loss",self.loss_v[0])
+		for i in range(15):
+			self.signals[0,i] = self.fodf[i+1]
+		
+		#with gil:
+		#	print("x before",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"fodf",self.signals[0,0],self.signals[0,1],self.signals[0,2])
+		mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+		#mw_openmp_single_o4c(self.x_v2[0], self.signals[0], self.est_signal[0], self.dipy_v[0], self.pysh_v[0], self.rot_pysh_v[0], self.angles_v[0], self.loss, 3)
+		#with gil:
+		#	print("x after",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"loss",self.loss[0])
+		#print(self.loss[0], self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
+
+
+		for i in range(3):
+			self.x_v2[0,i*4+3] += 0.5585053606381855 # heuristic (phi + 32 degrees)
+			sphere2cart(self.x_v2[0,i*4+2:i*4+4], self.best_dir[i])
+			self.x_v2[0,i*4+3] -= 0.5585053606381855
+
+			# flip y and z back to align with data:
+			#self.best_dir[i,1] = -self.best_dir[i,1]
+			#self.best_dir[i,2] = -self.best_dir[i,2]
+
+			self.weights[i] = fabs(log(fabs(self.x_v2[0,i*4])))
+			self.kappas[i] = fabs(self.x_v2[0,i*4+1])
+			#with gil:
+			#	print("more",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
+
+		# for i in range(3):
+		# 	mult_with_scalar(self.best_dir[i], pow(self.length[i], 1/4), self.best_dir_approx[:,i])
+		# 	with gil:
+		# 		print(norm(self.best_dir_approx[:,i]))
+
+		#self.prob.calculate_probabilities(self.best_dir, old_dir, point)
+		self.prob.calculate_watson_probabilities(self.best_dir, self.kappas, self.weights, old_dir, point)
+		cblas_dcopy(3, &self.prob.best_fit[0], 1, &self.next_dir[0],1)
+		return 0
 
 
 cdef class Trilinear(Interpolation):
@@ -413,7 +671,7 @@ cdef class Trilinear(Interpolation):
 				add_vectors(self.best_dir[i], self.array[0], self.array[1])
 
 
-			self.prob.calculate_probabilities(self.best_dir, old_dir)
+			self.prob.calculate_probabilities(self.best_dir, old_dir, point)
 			self.next_dir = self.prob.best_fit
 
 		else:
@@ -586,7 +844,7 @@ cdef class UKFFodf(UKF):
 			dctov(&self.mean[4*i], self.best_dir[i])
 
 
-		self.prob.calculate_probabilities(self.best_dir, old_dir)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
 		self.next_dir = self.prob.best_fit
 
 		return info
@@ -629,7 +887,7 @@ cdef class UKFMultiTensor(UKF):
 			else:
 				self.mean[5 * i + 4] = min(self.mean[5*i + 3], self.mean[5*i + 4])
 				set_zero_vector(self.best_dir[i])
-		self.prob.calculate_probabilities(self.best_dir, old_dir)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
 		self.next_dir = self.prob.best_fit
 		return info
 
