@@ -162,7 +162,7 @@ cdef class FACT(Interpolation):
 			self.set_vector(self.best_ind, i)
 			mult_with_scalar(self.best_dir[i], l, self.vector)
 		#printf('%i \n', thread_id)<
-		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, self.point_index[:3])
 		mult_with_scalar(self.next_dir, 1, self.prob.best_fit)
 		return 0
 
@@ -315,7 +315,7 @@ cdef class TrilinearFODF(Interpolation):
 
 		for i in range(3):
 			mult_with_scalar(self.best_dir[i], pow(self.length[i], 1/4), self.best_dir_approx[:,i])
-		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, self.point_index[:3])
 		cblas_dcopy(3, &self.prob.best_fit[0], 1, &self.next_dir[0],1)
 		return 0
 
@@ -502,7 +502,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 	#	set_zero_vector(val)
 
 		# if no previous directions are given (initial state) use low rank approx for initial directions
-		if norm(self.next_dir) == 0:
+		if True:#norm(self.next_dir) == 0:
 			#with gil:
 			self.fodf1 = esh_to_sym(self.fodf[1:])
 			approx_initial(self.length, self.best_dir_approx, tens, self.fodf1[:-1], self.rank, valsec, val,der, testv, anisoten, isoten)
@@ -543,6 +543,14 @@ cdef class TrilinearFODFWatson(Interpolation):
 		#with gil:
 		#	print("x before",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"fodf",self.signals[0,0],self.signals[0,1],self.signals[0,2])
 		mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+		
+		if self.loss[0] > 0.3:
+			for i in range(3):
+				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (4.9 - 0.1) + 0.1 # weight init between 0.1 and 4.9
+				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (20 - 8) + 8
+
+			mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+
 		#mw_openmp_single_o4c(self.x_v2[0], self.signals[0], self.est_signal[0], self.dipy_v[0], self.pysh_v[0], self.rot_pysh_v[0], self.angles_v[0], self.loss, 3)
 		#with gil:
 		#	print("x after",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"loss",self.loss[0])
@@ -569,7 +577,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 		# 		print(norm(self.best_dir_approx[:,i]))
 
 		#self.prob.calculate_probabilities(self.best_dir, old_dir, point)
-		self.prob.calculate_watson_probabilities(self.best_dir, self.kappas, self.weights, old_dir, point)
+		self.prob.calculate_watson_probabilities(self.best_dir, self.kappas, self.weights, old_dir, self.point_index[:3])
 		cblas_dcopy(3, &self.prob.best_fit[0], 1, &self.next_dir[0],1)
 		return 0
 
@@ -671,7 +679,7 @@ cdef class Trilinear(Interpolation):
 				add_vectors(self.best_dir[i], self.array[0], self.array[1])
 
 
-			self.prob.calculate_probabilities(self.best_dir, old_dir, point)
+			self.prob.calculate_probabilities(self.best_dir, old_dir, self.point_index[:3])
 			self.next_dir = self.prob.best_fit
 
 		else:
@@ -844,7 +852,7 @@ cdef class UKFFodf(UKF):
 			dctov(&self.mean[4*i], self.best_dir[i])
 
 
-		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, self.point_index[:3])
 		self.next_dir = self.prob.best_fit
 
 		return info
@@ -887,7 +895,7 @@ cdef class UKFMultiTensor(UKF):
 			else:
 				self.mean[5 * i + 4] = min(self.mean[5*i + 3], self.mean[5*i + 4])
 				set_zero_vector(self.best_dir[i])
-		self.prob.calculate_probabilities(self.best_dir, old_dir, point)
+		self.prob.calculate_probabilities(self.best_dir, old_dir, self.point_index[:3])
 		self.next_dir = self.prob.best_fit
 		return info
 
