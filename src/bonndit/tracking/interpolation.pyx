@@ -502,7 +502,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 	#	set_zero_vector(val)
 
 		# if no previous directions are given (initial state) use low rank approx for initial directions
-		if True:#norm(self.next_dir) == 0:
+		if norm(self.next_dir) == 0:
 			#with gil:
 			self.fodf1 = esh_to_sym(self.fodf[1:])
 			approx_initial(self.length, self.best_dir_approx, tens, self.fodf1[:-1], self.rank, valsec, val,der, testv, anisoten, isoten)
