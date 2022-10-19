@@ -83,6 +83,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 	# cdef double[:,:,:] dj_v
 	# cdef double[:] loss_v
 
+	cdef int lmax
 	cdef int amount
 	cdef double[:,:,:] dj
 	cdef double[:,:] x_v

@@ -18,6 +18,7 @@ cdef extern from "Ceres_Cython.h":
         int init_python()
         void getdj(double* dj)
         void minimize_watson_mult_o4(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* dj_p, double* loss_p, int amount, int lmax_p, int num_of_dir_p) nogil
+        void minimize_watson_mult_o8(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* dj_p, double* loss_p, int amount, int lmax_p, int num_of_dir_p) nogil
         void minimize_watson_single_o4(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* loss_p, int num_of_dir_p) nogil
 
 @cython.boundscheck(False)  # Deactivate bounds checking
@@ -60,6 +61,12 @@ cdef void mw_openmp_singlec(double[:] x, double[:] signal, double[:] est_signal,
 @cython.wraparound(False)   # Deactivate negative indexing.
 cdef void mw_openmp_mult_o4c(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:,:,:] dj, double[:] loss, int amount, int lmax, int num_of_dir) nogil:
         minimize_watson_mult_o4(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&dj[0,0,0],&loss[0],amount,lmax,num_of_dir)
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+cdef void mw_openmp_mult_o8c(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:,:,:] dj, double[:] loss, int amount, int lmax, int num_of_dir) nogil:
+        minimize_watson_mult_o8(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&dj[0,0,0],&loss[0],amount,lmax,num_of_dir)
+
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.

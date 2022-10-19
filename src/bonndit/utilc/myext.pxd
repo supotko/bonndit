@@ -11,10 +11,12 @@ cdef extern from "Ceres_Cython.h":
         int init_python()
         void getdj(double* dj)
         void minimize_watson_mult_o4(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* dj_p, double* loss_p, int amount, int lmax_p, int num_of_dir_p) nogil
+        void minimize_watson_mult_o8(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* dj_p, double* loss_p, int amount, int lmax_p, int num_of_dir_p) nogil
         void minimize_watson_single_o4(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* loss_p, int num_of_dir_p) nogil
 
 cdef int init_pyc()
 cdef void mw_openmp_multc(double[:,:], double[:,:], double[:,:], double[:,:], double[:,:,:,:], double[:,:,:,:], double[:,:], double[:,:,:], double[:], int, int, int) nogil
 cdef void mw_openmp_mult_o4c(double[:,:], double[:,:], double[:,:], double[:,:], double[:,:,:,:], double[:,:,:,:], double[:,:], double[:,:,:], double[:], int, int, int) nogil
+cdef void mw_openmp_mult_o8c(double[:,:], double[:,:], double[:,:], double[:,:], double[:,:,:,:], double[:,:,:,:], double[:,:], double[:,:,:], double[:], int, int, int) nogil
 cdef void mw_openmp_singlec(double[:], double[:], double[:], double[:], double[:,:,:], double[:,:,:], double[:], double[:,:,:], double[:], int, int) nogil
 cdef void mw_openmp_single_o4c(double[:], double[:], double[:], double[:], double[:,:,:], double[:,:,:], double[:], double[:], int) nogil

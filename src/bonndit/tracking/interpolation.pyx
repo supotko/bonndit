@@ -18,14 +18,14 @@ cdef int[:,:] permute_poss = np.array([[0,1,2],[0,2,1], [1,0,2], [1,2,0], [2,1,0
 from .kalman.model cimport AbstractModel, fODFModel, MultiTensorModel
 from .kalman.kalman cimport Kalman
 from .alignedDirection cimport Probabilities
-from libc.math cimport pow, pi, acos, floor, fabs,fmax, exp, abs, log
+from libc.math cimport pow, pi, acos, floor, fabs,fmax, exp, abs, log, sqrt
 from libc.stdio cimport printf
 from libc.stdlib cimport rand, srand, RAND_MAX
 from libc.time cimport time
 from bonndit.utilc.cython_helpers cimport fa, dctov, dinit
 from bonndit.utilc.blas_lapack cimport *
 from bonndit.utils.esh import esh_to_sym
-from bonndit.utilc.myext cimport mw_openmp_single_o4c, mw_openmp_multc, mw_openmp_mult_o4c
+from bonndit.utilc.myext cimport mw_openmp_single_o4c, mw_openmp_multc, mw_openmp_mult_o4c, mw_openmp_mult_o8c
 
 DTYPE = np.float64
 cdef double _lambda_min = 0.1
@@ -323,12 +323,14 @@ cdef class TrilinearFODF(Interpolation):
 cdef class TrilinearFODFWatson(Interpolation):
 	def __cinit__(self, double[:,:,:,:,:]  vector_field, int[:] grid, Probabilities probClass, **kwargs):
 		super(TrilinearFODFWatson, self).__init__(vector_field, grid, probClass, **kwargs)
+		
+		self.lmax = int(0.5*(sqrt(1 + 8*kwargs['data'].shape[0])-3))
 		self.data = kwargs['data']
-		self.fodf = np.zeros((16,))
-		self.fodf1 = np.zeros((16,))
+		self.fodf = np.zeros((kwargs['data'].shape[0],))
+		self.fodf1 = np.zeros((kwargs['data'].shape[0],))
 		self.length = np.zeros((3,))
 		self.inc= np.int32(np.prod(kwargs['data'].shape[1:]))
-		self.empty = np.zeros((15,))
+		self.empty = np.zeros((kwargs['data'].shape[0]-1,))
 		#self.x_v = np.zeros((12,))
 		# self.dipy_v = np.zeros((15,))
 		# #self.signal_v = np.zeros((15,))
@@ -360,18 +362,18 @@ cdef class TrilinearFODFWatson(Interpolation):
 		# self.est_signal = np.zeros((self.amount, 28))
 
 		self.amount = 1#nonzero_csd_init.shape[0]#1000
-		self.dj = np.zeros((5,5,5))
+		self.dj = np.zeros((self.lmax+1,self.lmax+1,self.lmax+1))
 		#self.x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
 		#self.signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ]])
 		self.x_v2 = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
 		self.x_v = np.zeros((self.amount,12))
-		self.signals = np.zeros((self.amount,15))
+		self.signals = np.zeros((self.amount,kwargs['data'].shape[0]-1))
 		self.loss = np.zeros(self.amount)
 		self.angles_v = np.zeros((self.amount, 3))
-		self.dipy_v = np.zeros((self.amount, 15))
-		self.pysh_v = np.zeros((self.amount, 2, 5, 5))
+		self.dipy_v = np.zeros((self.amount, kwargs['data'].shape[0]-1))
+		self.pysh_v = np.zeros((self.amount, 2, self.lmax+1, self.lmax+1))
 		self.rot_pysh_v = np.zeros_like(self.pysh_v)
-		self.est_signal = np.zeros((self.amount, 15))
+		self.est_signal = np.zeros((self.amount, kwargs['data'].shape[0]-1))
 		self.kappas = np.zeros((3,))
 		self.weights = np.zeros((3,))
 
@@ -505,7 +507,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 		# if no previous directions are given (initial state) use low rank approx for initial directions
 		if norm(self.next_dir) == 0:
 			#with gil:
-			self.fodf1 = esh_to_sym(self.fodf[1:])
+			self.fodf1 = esh_to_sym(self.fodf[1:16])
 			approx_initial(self.length, self.best_dir_approx, tens, self.fodf1[:-1], self.rank, valsec, val,der, testv, anisoten, isoten)
 
 			for i in range(3):
@@ -513,8 +515,8 @@ cdef class TrilinearFODFWatson(Interpolation):
 				#with gil:
 				#	print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
 				# configure initial x for watson estimation
-				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (4.9 - 0.1) + 0.1 # weight init between 0.1 and 4.9
-				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (30 - 8) + 8 # kappa init between 8 and 20
+				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 1.0
+				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (3.5 - 2.4) + 2.4 #(30 - 8) + 8 # kappa init between 8 and 20
 
 				# flip y and z to align with sh:
 				#self.best_dir[i,1] = -self.best_dir[i,1]
@@ -538,17 +540,22 @@ cdef class TrilinearFODFWatson(Interpolation):
 
 		# with gil:
 		# 	print("x after",self.x_v[0],self.x_v[1],self.x_v[2],self.x_v[3],"loss",self.loss_v[0])
-		for i in range(15):
+		for i in range(self.data.shape[0]-1):
 			self.signals[0,i] = self.fodf[i+1]
 		
 		#with gil:
 		#	print("x before",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"fodf",self.signals[0,0],self.signals[0,1],self.signals[0,2])
-		mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
-		
+		if self.lmax == 4:
+			mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+		elif self.lmax == 6:
+			mw_openmp_multc(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 6, 3)
+		elif self.lmax == 8:
+			mw_openmp_mult_o8c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 8, 3)
+
 		if self.loss[0] > 0.3:
 			for i in range(3):
-				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (4.9 - 0.1) + 0.1 # weight init between 0.1 and 4.9
-				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (30 - 8) + 8
+				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 4.9
+				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (3.5 - 2.4) + 2.4
 
 			mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
 
