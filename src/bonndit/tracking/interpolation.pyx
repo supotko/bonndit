@@ -480,6 +480,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 			mult_with_scalar(self.fodf, 1/scale, self.fodf1)
 
 	cdef int interpolate(self, double[:] point, double[:] old_dir, int r) : # nogil except *:
+		cdef double heuristic_angle = 0.6283185307179586 # 0.5585053606381855
 	#	with gil: print(np.array(old_dir))
 		# Initialize with last step. Except we are starting again.
 		self.point_world[:3] = point
@@ -513,14 +514,14 @@ cdef class TrilinearFODFWatson(Interpolation):
 				#	print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
 				# configure initial x for watson estimation
 				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (4.9 - 0.1) + 0.1 # weight init between 0.1 and 4.9
-				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (20 - 8) + 8 # kappa init between 8 and 20
+				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (30 - 8) + 8 # kappa init between 8 and 20
 
 				# flip y and z to align with sh:
 				#self.best_dir[i,1] = -self.best_dir[i,1]
 				#self.best_dir[i,2] = -self.best_dir[i,2]
 
 				cart2sphere(self.best_dir[i], self.x_v2[0,i*4+2:i*4+4]) # set initial directions in spherical (theta, phi)
-				self.x_v2[0,i*4+3] = self.x_v2[0,i*4+3] - 0.5585053606381855 # heuristic (phi - 25 degrees)
+				self.x_v2[0,i*4+3] = self.x_v2[0,i*4+3] - heuristic_angle # heuristic (phi - 25 degrees)
 			
 			#with gil:
 			#print("NEW STREAMLINE")
@@ -547,7 +548,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 		if self.loss[0] > 0.3:
 			for i in range(3):
 				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (4.9 - 0.1) + 0.1 # weight init between 0.1 and 4.9
-				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (20 - 8) + 8
+				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (30 - 8) + 8
 
 			mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
 
@@ -558,9 +559,9 @@ cdef class TrilinearFODFWatson(Interpolation):
 
 
 		for i in range(3):
-			self.x_v2[0,i*4+3] += 0.5585053606381855 # heuristic (phi + 32 degrees)
+			self.x_v2[0,i*4+3] += heuristic_angle # heuristic (phi + 32 degrees)
 			sphere2cart(self.x_v2[0,i*4+2:i*4+4], self.best_dir[i])
-			self.x_v2[0,i*4+3] -= 0.5585053606381855
+			self.x_v2[0,i*4+3] -= heuristic_angle
 
 			# flip y and z back to align with data:
 			#self.best_dir[i,1] = -self.best_dir[i,1]
