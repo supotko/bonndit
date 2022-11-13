@@ -33,7 +33,10 @@ cdef class Deterministic2(Probabilities):
 
 cdef class Watson(Probabilities):
 	cdef double[:,:,:,:] kappa_field
-	cdef void watson_config(self, double[:,:,:,:]) # nogil except *
+	cdef double max_samplingangle
+	cdef double max_kappa
+	cdef double min_kappa
+	cdef void watson_config(self, double[:,:,:,:], double, double, double) # nogil except *
 	cdef double poly_kummer(self, double) # nogil  except *
 	cdef double poly_watson(self, double[:], double[:], double) # nogil except *
 	cdef void mc_random_direction(self, double[:], double[:], double) # nogil except *

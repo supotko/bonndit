@@ -226,8 +226,11 @@ cdef class Deterministic(Probabilities):
 		self.chosen_angle = self.angles[min_index]
 
 cdef class Watson(Probabilities):
-	cdef void watson_config(self, double[:,:,:,:] kappa_field) :#nogil  except *:
+	cdef void watson_config(self, double[:,:,:,:] kappa_field, double max_samplingangle, double max_kappa, double min_kappa) :#nogil  except *:
 		self.kappa_field = kappa_field
+		self.max_samplingangle = max_samplingangle
+		self.max_kappa = max_kappa
+		self.min_kappa = min_kappa
 
 	cdef double poly_kummer(self, double kappa) :#nogil  except *:
 		return exp(kappa)/sqrt(kappa) * dawsn(sqrt(kappa))
@@ -263,7 +266,7 @@ cdef class Watson(Probabilities):
 		cdef int i, min_index=0
 		cdef double s, min_angle=0, norm_of_test, mc_angle = 360
 
-		cdef double[:] watson_point
+		cdef double kappa_value
 
 		self.aligned_direction(vectors, direction)
 		for i in range(3):
@@ -272,16 +275,23 @@ cdef class Watson(Probabilities):
 					min_angle=self.angles[i]
 					min_index=i
 
+		kappa_value = self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))]
+
+		# if kappa is to low the tracking is stopped
+		if kappa_value < self.min_kappa:
+			self.best_fit = np.zeros((3))
+			return
+
 		# normalize length of selected peak direction
 		norm_of_test = norm(self.test_vectors[min_index])
 		if norm_of_test != 0:
 			mult_with_scalar(self.test_vectors[min_index],1/norm_of_test,self.test_vectors[min_index])
 
-		while mc_angle > 30:
+		while mc_angle > self.max_samplingangle:
 			self.mc_random_direction(self.best_fit, 
 								 self.test_vectors[min_index], 
 								 #self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))])
-								 max(1, min(80,self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))])))
+								 min(self.max_kappa,kappa_value))
 								 #max(8, min(20,self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))]+8)))
 		
 			# flip direction if > 90:
@@ -307,7 +317,7 @@ cdef class Watson(Probabilities):
 		mult_with_scalar(self.best_fit, norm_of_test, self.best_fit)
 
 		#self.chosen_prob = ((max(8, min(20,self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))]+8))) - 8) / 12.
-		self.chosen_prob = max(1, min(80,self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))]))
+		self.chosen_prob = min(self.max_kappa,kappa_value)
 		self.chosen_angle = self.angles[min_index]
 
 	cdef void calculate_watson_probabilities(self, double[:,:] vectors, double[:] kappas, double[:] weights, double[:] direction, double[:] point) : # nogil  except *:
@@ -320,7 +330,7 @@ cdef class Watson(Probabilities):
 		cdef int i, min_index=0
 		cdef double s, min_angle=0, norm_of_test, mc_angle = 360
 
-		cdef double[:] watson_point
+		cdef double kappa_value
 
 		self.aligned_direction(vectors, direction)
 		for i in range(3):
@@ -329,14 +339,21 @@ cdef class Watson(Probabilities):
 					min_angle=self.angles[i]
 					min_index=i
 
+		kappa_value = kappas[min_index]
+
+		# if kappa is to low the tracking is stopped
+		if kappa_value < self.min_kappa:
+			self.best_fit = np.zeros((3))
+			return
+
 		# normalize length of selected peak direction
 		norm_of_test = norm(self.test_vectors[min_index])
 		mult_with_scalar(self.test_vectors[min_index],1/norm_of_test,self.test_vectors[min_index])
 
-		while mc_angle > 30:
+		while mc_angle > self.max_samplingangle:
 			self.mc_random_direction(self.best_fit, 
 								 self.test_vectors[min_index], 
-								 max(1, min(80,kappas[min_index])))
+								 min(self.max_kappa,kappa_value))
 		
 			# flip direction if > 90:
 			if scalar(self.best_fit, self.test_vectors[min_index]) < 0:
@@ -359,6 +376,6 @@ cdef class Watson(Probabilities):
 		# reset to original length
 		mult_with_scalar(self.best_fit, norm_of_test, self.best_fit)
 
-		self.chosen_prob = max(1, min(80,kappas[min_index]))
+		self.chosen_prob = min(self.max_kappa,kappas[min_index])
 		self.chosen_angle = self.angles[min_index]
 

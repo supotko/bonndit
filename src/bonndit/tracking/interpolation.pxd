@@ -97,6 +97,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 	cdef double[:,:] est_signal
 	cdef double[:] kappas
 	cdef double[:] weights
+	cdef double[:] kappa_range
 
 	cdef double sigma_1
 	cdef double sigma_2

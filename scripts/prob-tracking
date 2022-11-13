@@ -168,6 +168,12 @@ def main():
 	parser.add_argument('--ukf_mnoise', help='Measurement noise', nargs='+', default=argparse.SUPPRESS)
 	# subsubparser = parser_ukf.add_subparsers(help = 'Decide between low-rank and Multitensor model')
 
+	# Arguments for Watson fitting
+	parser.add_argument('--kapparange', help='For Watson fitting: range of initial kappa values to randomly sample from.', default='39.9,40')
+	parser.add_argument('--maxsamplingangle', help='For Watson fitting: max angle to watson peak to randomly sample from.', default=90)
+	parser.add_argument('--maxkappa', help='For Watson fitting: max kappa value to sample from, higher values get clipped', default=80)
+	parser.add_argument('--minkappa', help='For Watson fitting: min kappa value to sample from, if lower the tracking is stopped', default=1)
+
 	parser.add_argument('-v', '--verbose', default=True)
 	parser.add_argument('-r', '--exclusion', default=argparse.SUPPRESS)
 	parser.add_argument('--min_len', default=0)
@@ -304,14 +310,17 @@ def main():
 		'wm_mask': np.float64(wm_mask),
 		'act': act.get_fdata() if act else None,
 		'verbose': args.verbose,
-		'sw_save': int(args.sw_save)
+		'sw_save': int(args.sw_save),
+		'maxsamplingangle' : float(args.maxsamplingangle),
+		'maxkappa' : float(args.maxkappa),
+		'minkappa' : float(args.minkappa)
 	}
 	postprocessing = {
 		'inclusion': np.loadtxt(args.inclusion) if "inclusion" in args else "",
 		'exclusion': np.loadtxt(args.exclusion) if "exclusion" in args else "",
 	}
 	ukf_parameter = {}
-	if args.interpolation == 'TrilinearFODF' or args.interpolation == 'TrilinearFODFWatson':
+	if args.interpolation == 'TrilinearFODF':
 		trilinear_parameters = {
 			'data': load('data', args, 'fodf.nrrd', args.i, logging, nrrd.read)[0],
 			'trafo_data': trafo_data,
@@ -320,6 +329,17 @@ def main():
 			'trafo': meta['space directions'][-3:],
 			'r': float(args.dist),
 			'rank': int(args.rank)
+		}
+	elif args.interpolation == 'TrilinearFODFWatson':
+		trilinear_parameters = {
+			'data': load('data', args, 'fodf.nrrd', args.i, logging, nrrd.read)[0],
+			'trafo_data': trafo_data,
+			'sigma_1': float(args.sigma_1),
+			'sigma_2': float(args.sigma_2),
+			'trafo': meta['space directions'][-3:],
+			'r': float(args.dist),
+			'rank': int(args.rank),
+			'kappa_range' : np.array(args.kapparange.split(',')).astype(float),
 		}
 	else:
 		trilinear_parameters = {}

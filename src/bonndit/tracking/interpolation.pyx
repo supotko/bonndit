@@ -331,37 +331,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 		self.length = np.zeros((3,))
 		self.inc= np.int32(np.prod(kwargs['data'].shape[1:]))
 		self.empty = np.zeros((kwargs['data'].shape[0]-1,))
-		#self.x_v = np.zeros((12,))
-		# self.dipy_v = np.zeros((15,))
-		# #self.signal_v = np.zeros((15,))
-		# self.est_signal_v = np.zeros((15,))
-		# self.x_v = np.array([ 		2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,
-        # 							3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,
-        # 							1.24552913, -2.84815265]) #nonzero_csd_init[:amount].copy()
-		# self.signal_v = np.array([	0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,
-       	# 							-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464,
-       	# 							0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ,
-       	# 							-0.0071501 , -0.0063297 ,  0.00019099,  0.00813005,  0.00532886,
-       	# 							-0.01496287,  0.00619936, -0.01115468, -0.00603983, -0.01041317,
-       	# 							0.00047331, -0.00409659, -0.0191022 ])
-		# self.pysh_v = np.zeros((2,5,5))
-		# self.rot_pysh_v = np.zeros((2,5,5))
-		# self.angles_v = np.zeros((3,))
-		# self.dj_v = np.zeros((5,5,5))
-		# self.loss_v = np.zeros((1,))
-
-		# self.amount = 1#nonzero_csd_init.shape[0]#1000
-		# self.dj = np.zeros((5,5,5))
-		# self.x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
-		# self.signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ,-0.0071501 , -0.0063297 ,  0.00019099,  0.00813005,  0.00532886,-0.01496287,  0.00619936, -0.01115468, -0.00603983, -0.01041317, 0.00047331, -0.00409659, -0.0191022 ]])
-		# self.loss = np.zeros(self.amount)
-		# self.angles_v = np.zeros((self.amount, 3))
-		# self.dipy_v = np.zeros((self.amount, 28))
-		# self.pysh_v = np.zeros((self.amount, 2, 7, 7))
-		# self.rot_pysh_v = np.zeros_like(self.pysh_v)
-		# self.est_signal = np.zeros((self.amount, 28))
-
-		self.amount = 1#nonzero_csd_init.shape[0]#1000
+		self.amount = 1
 		self.dj = np.zeros((self.lmax+1,self.lmax+1,self.lmax+1))
 		#self.x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
 		#self.signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ]])
@@ -376,7 +346,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 		self.est_signal = np.zeros((self.amount, kwargs['data'].shape[0]-1))
 		self.kappas = np.zeros((3,))
 		self.weights = np.zeros((3,))
-
+		self.kappa_range = kwargs['kappa_range']
 
 		if kwargs['r'] == -1:
 			kwargs['r'] = 2
@@ -482,7 +452,6 @@ cdef class TrilinearFODFWatson(Interpolation):
 			mult_with_scalar(self.fodf, 1/scale, self.fodf1)
 
 	cdef int interpolate(self, double[:] point, double[:] old_dir, int r) : # nogil except *:
-		cdef double heuristic_angle = 0.6283185307179586 # 0.5585053606381855
 	#	with gil: print(np.array(old_dir))
 		# Initialize with last step. Except we are starting again.
 		self.point_world[:3] = point
@@ -507,7 +476,19 @@ cdef class TrilinearFODFWatson(Interpolation):
 		# if no previous directions are given (initial state) use low rank approx for initial directions
 		if norm(self.next_dir) == 0:
 			#with gil:
-			self.fodf1 = esh_to_sym(self.fodf[1:16])
+			self.fodf1[5]  = self.fodf[1+1]
+			self.fodf1[4]  = self.fodf[1+2]
+			self.fodf1[2]  = self.fodf[1+4]
+			self.fodf1[1]  = self.fodf[1+5]
+			self.fodf1[14] = self.fodf[1+6]
+			self.fodf1[13] = self.fodf[1+7]
+			self.fodf1[12] = self.fodf[1+8]
+			self.fodf1[11] = self.fodf[1+9]
+			self.fodf1[9]  = self.fodf[1+11]
+			self.fodf1[8]  = self.fodf[1+12]
+			self.fodf1[7]  = self.fodf[1+13]
+			self.fodf1[6]  = self.fodf[1+14]
+			self.fodf1 = esh_to_sym(self.fodf1[:15])
 			approx_initial(self.length, self.best_dir_approx, tens, self.fodf1[:-1], self.rank, valsec, val,der, testv, anisoten, isoten)
 
 			for i in range(3):
@@ -516,14 +497,13 @@ cdef class TrilinearFODFWatson(Interpolation):
 				#	print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
 				# configure initial x for watson estimation
 				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 1.0
-				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (3.5 - 2.4) + 2.4 #(30 - 8) + 8 # kappa init between 8 and 20
+				self.x_v2[0,i*4+1] = log((rand() / RAND_MAX) * (self.kappa_range[1] - self.kappa_range[0]) + self.kappa_range[0])
 
-				# flip y and z to align with sh:
-				#self.best_dir[i,1] = -self.best_dir[i,1]
-				#self.best_dir[i,2] = -self.best_dir[i,2]
+				# flip x and z to align with sh:
+				self.best_dir[i,0] = -self.best_dir[i,0]
+				self.best_dir[i,2] = -self.best_dir[i,2]
 
 				cart2sphere(self.best_dir[i], self.x_v2[0,i*4+2:i*4+4]) # set initial directions in spherical (theta, phi)
-				self.x_v2[0,i*4+3] = self.x_v2[0,i*4+3] - heuristic_angle # heuristic (phi - 25 degrees)
 			
 			#with gil:
 			#print("NEW STREAMLINE")
@@ -554,10 +534,15 @@ cdef class TrilinearFODFWatson(Interpolation):
 
 		if self.loss[0] > 0.3:
 			for i in range(3):
-				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 4.9
-				self.x_v2[0,i*4+1] = (rand() / RAND_MAX) * (3.5 - 2.4) + 2.4
+				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1
+				self.x_v2[0,i*4+1] = log((rand() / RAND_MAX) * (self.kappa_range[1] - self.kappa_range[0]) + self.kappa_range[0])
 
-			mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+			if self.lmax == 4:
+				mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+			elif self.lmax == 6:
+				mw_openmp_multc(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 6, 3)
+			elif self.lmax == 8:
+				mw_openmp_mult_o8c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 8, 3)
 
 		#mw_openmp_single_o4c(self.x_v2[0], self.signals[0], self.est_signal[0], self.dipy_v[0], self.pysh_v[0], self.rot_pysh_v[0], self.angles_v[0], self.loss, 3)
 		#with gil:
@@ -566,16 +551,14 @@ cdef class TrilinearFODFWatson(Interpolation):
 
 
 		for i in range(3):
-			self.x_v2[0,i*4+3] += heuristic_angle # heuristic (phi + 32 degrees)
 			sphere2cart(self.x_v2[0,i*4+2:i*4+4], self.best_dir[i])
-			self.x_v2[0,i*4+3] -= heuristic_angle
 
-			# flip y and z back to align with data:
-			#self.best_dir[i,1] = -self.best_dir[i,1]
-			#self.best_dir[i,2] = -self.best_dir[i,2]
+			# flip x and z back to align with data:
+			self.best_dir[i,0] = -self.best_dir[i,0]
+			self.best_dir[i,2] = -self.best_dir[i,2]
 
-			self.weights[i] = fabs(log(fabs(self.x_v2[0,i*4])))
-			self.kappas[i] = fabs(self.x_v2[0,i*4+1])
+			self.weights[i] = fabs(self.x_v2[0,i*4])
+			self.kappas[i] = exp(fabs(self.x_v2[0,i*4+1]))
 			#with gil:
 			#	print("more",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
 
