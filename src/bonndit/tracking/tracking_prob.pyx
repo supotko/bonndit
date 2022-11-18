@@ -12,7 +12,6 @@ from bonndit.utilc.cython_helpers cimport mult_with_scalar, sum_c, sum_c_int, se
 	angle_deg, norm
 import numpy as np
 from tqdm import tqdm
-from bonndit.utilc.myext cimport mw_openmp_single_o4c, mw_openmp_multc, mw_openmp_mult_o4c
 
 ctypedef struct possible_features:
 	int chosen_angle

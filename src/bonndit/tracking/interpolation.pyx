@@ -25,7 +25,7 @@ from libc.time cimport time
 from bonndit.utilc.cython_helpers cimport fa, dctov, dinit
 from bonndit.utilc.blas_lapack cimport *
 from bonndit.utils.esh import esh_to_sym
-from bonndit.utilc.myext cimport mw_openmp_single_o4c, mw_openmp_multc, mw_openmp_mult_o4c, mw_openmp_mult_o8c
+from bonndit.utilc.myext cimport mw_openmp_mult_o4, mw_openmp_mult_o6, mw_openmp_mult_o8
 
 DTYPE = np.float64
 cdef double _lambda_min = 0.1
@@ -526,11 +526,11 @@ cdef class TrilinearFODFWatson(Interpolation):
 		#with gil:
 		#	print("x before",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"fodf",self.signals[0,0],self.signals[0,1],self.signals[0,2])
 		if self.lmax == 4:
-			mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+			mw_openmp_mult_o4(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, 3, 0)
 		elif self.lmax == 6:
-			mw_openmp_multc(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 6, 3)
+			mw_openmp_mult_o6(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, 3, 0)
 		elif self.lmax == 8:
-			mw_openmp_mult_o8c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 8, 3)
+			mw_openmp_mult_o8(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, 3, 0)
 
 		if self.loss[0] > 0.3:
 			for i in range(3):
@@ -538,12 +538,11 @@ cdef class TrilinearFODFWatson(Interpolation):
 				self.x_v2[0,i*4+1] = log((rand() / RAND_MAX) * (self.kappa_range[1] - self.kappa_range[0]) + self.kappa_range[0])
 
 			if self.lmax == 4:
-				mw_openmp_mult_o4c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 4, 3)
+				mw_openmp_mult_o4(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, 3, 0)
 			elif self.lmax == 6:
-				mw_openmp_multc(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 6, 3)
+				mw_openmp_mult_o6(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, 3, 0)
 			elif self.lmax == 8:
-				mw_openmp_mult_o8c(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.dj, self.loss, self.amount, 8, 3)
-
+				mw_openmp_mult_o8(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, 3, 0)
 		#mw_openmp_single_o4c(self.x_v2[0], self.signals[0], self.est_signal[0], self.dipy_v[0], self.pysh_v[0], self.rot_pysh_v[0], self.angles_v[0], self.loss, 3)
 		#with gil:
 		#	print("x after",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"loss",self.loss[0])
