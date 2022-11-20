@@ -2277,6 +2277,8 @@ static PyObject *contiguous = 0;
 static PyObject *indirect_contiguous = 0;
 static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
+static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o4(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int, int, int); /*proto*/
+static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o8(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int, int, int); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -2589,6 +2591,95 @@ static PyObject *__pyx_codeobj__28;
 /* "bonndit/utilc/myext.pyx":17
  *         void minimize_watson_mult_o8(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* loss_p, int amount, int num_of_dir_p, int no_spread) nogil
  * 
+ * cdef void mw_openmp_mult(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int order, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
+ *         if order == 4:
+ *                 mw_openmp_mult_o4(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ */
+
+static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult(__Pyx_memviewslice __pyx_v_x, __Pyx_memviewslice __pyx_v_signal, __Pyx_memviewslice __pyx_v_est_signal, __Pyx_memviewslice __pyx_v_dipy_v, __Pyx_memviewslice __pyx_v_pysh_v, __Pyx_memviewslice __pyx_v_rot_pysh_v, __Pyx_memviewslice __pyx_v_angles_v, __Pyx_memviewslice __pyx_v_loss, int __pyx_v_amount, int __pyx_v_order, int __pyx_v_num_of_dir, int __pyx_v_no_spread) {
+
+  /* "bonndit/utilc/myext.pyx":18
+ * 
+ * cdef void mw_openmp_mult(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int order, int num_of_dir, int no_spread) nogil:
+ *         if order == 4:             # <<<<<<<<<<<<<<
+ *                 mw_openmp_mult_o4(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ *         elif order == 6:
+ */
+  switch (__pyx_v_order) {
+    case 4:
+
+    /* "bonndit/utilc/myext.pyx":19
+ * cdef void mw_openmp_mult(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int order, int num_of_dir, int no_spread) nogil:
+ *         if order == 4:
+ *                 mw_openmp_mult_o4(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)             # <<<<<<<<<<<<<<
+ *         elif order == 6:
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ */
+    __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o4(__pyx_v_x, __pyx_v_signal, __pyx_v_est_signal, __pyx_v_dipy_v, __pyx_v_pysh_v, __pyx_v_rot_pysh_v, __pyx_v_angles_v, __pyx_v_loss, __pyx_v_amount, __pyx_v_num_of_dir, __pyx_v_no_spread);
+
+    /* "bonndit/utilc/myext.pyx":18
+ * 
+ * cdef void mw_openmp_mult(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int order, int num_of_dir, int no_spread) nogil:
+ *         if order == 4:             # <<<<<<<<<<<<<<
+ *                 mw_openmp_mult_o4(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ *         elif order == 6:
+ */
+    break;
+    case 6:
+
+    /* "bonndit/utilc/myext.pyx":21
+ *                 mw_openmp_mult_o4(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ *         elif order == 6:
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)             # <<<<<<<<<<<<<<
+ *         elif order == 8:
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ */
+    __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o8(__pyx_v_x, __pyx_v_signal, __pyx_v_est_signal, __pyx_v_dipy_v, __pyx_v_pysh_v, __pyx_v_rot_pysh_v, __pyx_v_angles_v, __pyx_v_loss, __pyx_v_amount, __pyx_v_num_of_dir, __pyx_v_no_spread);
+
+    /* "bonndit/utilc/myext.pyx":20
+ *         if order == 4:
+ *                 mw_openmp_mult_o4(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ *         elif order == 6:             # <<<<<<<<<<<<<<
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ *         elif order == 8:
+ */
+    break;
+    case 8:
+
+    /* "bonndit/utilc/myext.pyx":23
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ *         elif order == 8:
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)             # <<<<<<<<<<<<<<
+ * 
+ * cdef void mw_openmp_mult_o4(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:
+ */
+    __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o8(__pyx_v_x, __pyx_v_signal, __pyx_v_est_signal, __pyx_v_dipy_v, __pyx_v_pysh_v, __pyx_v_rot_pysh_v, __pyx_v_angles_v, __pyx_v_loss, __pyx_v_amount, __pyx_v_num_of_dir, __pyx_v_no_spread);
+
+    /* "bonndit/utilc/myext.pyx":22
+ *         elif order == 6:
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ *         elif order == 8:             # <<<<<<<<<<<<<<
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ * 
+ */
+    break;
+    default: break;
+  }
+
+  /* "bonndit/utilc/myext.pyx":17
+ *         void minimize_watson_mult_o8(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* loss_p, int amount, int num_of_dir_p, int no_spread) nogil
+ * 
+ * cdef void mw_openmp_mult(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int order, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
+ *         if order == 4:
+ *                 mw_openmp_mult_o4(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ */
+
+  /* function exit code */
+}
+
+/* "bonndit/utilc/myext.pyx":25
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
+ * 
  * cdef void mw_openmp_mult_o4(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
  *         minimize_watson_mult_o4(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)
  * 
@@ -2615,7 +2706,7 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o4(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_18;
   Py_ssize_t __pyx_t_19;
 
-  /* "bonndit/utilc/myext.pyx":18
+  /* "bonndit/utilc/myext.pyx":26
  * 
  * cdef void mw_openmp_mult_o4(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:
  *         minimize_watson_mult_o4(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)             # <<<<<<<<<<<<<<
@@ -2643,8 +2734,8 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o4(__Pyx_memviewslice 
   __pyx_t_19 = 0;
   minimize_watson_mult_o4((&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_x.data + __pyx_t_1 * __pyx_v_x.strides[0]) ) + __pyx_t_2 * __pyx_v_x.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_signal.data + __pyx_t_3 * __pyx_v_signal.strides[0]) ) + __pyx_t_4 * __pyx_v_signal.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_est_signal.data + __pyx_t_5 * __pyx_v_est_signal.strides[0]) ) + __pyx_t_6 * __pyx_v_est_signal.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dipy_v.data + __pyx_t_7 * __pyx_v_dipy_v.strides[0]) ) + __pyx_t_8 * __pyx_v_dipy_v.strides[1]) )))), (&(*((double *) ( /* dim=3 */ (( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_pysh_v.data + __pyx_t_9 * __pyx_v_pysh_v.strides[0]) ) + __pyx_t_10 * __pyx_v_pysh_v.strides[1]) ) + __pyx_t_11 * __pyx_v_pysh_v.strides[2]) ) + __pyx_t_12 * __pyx_v_pysh_v.strides[3]) )))), (&(*((double *) ( /* dim=3 */ (( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_rot_pysh_v.data + __pyx_t_13 * __pyx_v_rot_pysh_v.strides[0]) ) + __pyx_t_14 * __pyx_v_rot_pysh_v.strides[1]) ) + __pyx_t_15 * __pyx_v_rot_pysh_v.strides[2]) ) + __pyx_t_16 * __pyx_v_rot_pysh_v.strides[3]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_angles_v.data + __pyx_t_17 * __pyx_v_angles_v.strides[0]) ) + __pyx_t_18 * __pyx_v_angles_v.strides[1]) )))), (&(*((double *) ( /* dim=0 */ (__pyx_v_loss.data + __pyx_t_19 * __pyx_v_loss.strides[0]) )))), __pyx_v_amount, __pyx_v_num_of_dir, __pyx_v_no_spread);
 
-  /* "bonndit/utilc/myext.pyx":17
- *         void minimize_watson_mult_o8(double* parameters, double* signal_p, double* est_signal_p, double* dipy_v_p, double* pysh_v_p, double* rot_pysh_v_p, double* angles_v_p, double* loss_p, int amount, int num_of_dir_p, int no_spread) nogil
+  /* "bonndit/utilc/myext.pyx":25
+ *                 mw_openmp_mult_o8(x,signal,est_signal,dipy_v,pysh_v,rot_pysh_v,angles_v,loss,amount,num_of_dir,no_spread)
  * 
  * cdef void mw_openmp_mult_o4(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
  *         minimize_watson_mult_o4(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)
@@ -2654,7 +2745,7 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o4(__Pyx_memviewslice 
   /* function exit code */
 }
 
-/* "bonndit/utilc/myext.pyx":20
+/* "bonndit/utilc/myext.pyx":28
  *         minimize_watson_mult_o4(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)
  * 
  * cdef void mw_openmp_mult_o6(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
@@ -2683,7 +2774,7 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o6(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_18;
   Py_ssize_t __pyx_t_19;
 
-  /* "bonndit/utilc/myext.pyx":21
+  /* "bonndit/utilc/myext.pyx":29
  * 
  * cdef void mw_openmp_mult_o6(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:
  *         minimize_watson_mult_o6(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)             # <<<<<<<<<<<<<<
@@ -2711,7 +2802,7 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o6(__Pyx_memviewslice 
   __pyx_t_19 = 0;
   minimize_watson_mult_o6((&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_x.data + __pyx_t_1 * __pyx_v_x.strides[0]) ) + __pyx_t_2 * __pyx_v_x.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_signal.data + __pyx_t_3 * __pyx_v_signal.strides[0]) ) + __pyx_t_4 * __pyx_v_signal.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_est_signal.data + __pyx_t_5 * __pyx_v_est_signal.strides[0]) ) + __pyx_t_6 * __pyx_v_est_signal.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dipy_v.data + __pyx_t_7 * __pyx_v_dipy_v.strides[0]) ) + __pyx_t_8 * __pyx_v_dipy_v.strides[1]) )))), (&(*((double *) ( /* dim=3 */ (( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_pysh_v.data + __pyx_t_9 * __pyx_v_pysh_v.strides[0]) ) + __pyx_t_10 * __pyx_v_pysh_v.strides[1]) ) + __pyx_t_11 * __pyx_v_pysh_v.strides[2]) ) + __pyx_t_12 * __pyx_v_pysh_v.strides[3]) )))), (&(*((double *) ( /* dim=3 */ (( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_rot_pysh_v.data + __pyx_t_13 * __pyx_v_rot_pysh_v.strides[0]) ) + __pyx_t_14 * __pyx_v_rot_pysh_v.strides[1]) ) + __pyx_t_15 * __pyx_v_rot_pysh_v.strides[2]) ) + __pyx_t_16 * __pyx_v_rot_pysh_v.strides[3]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_angles_v.data + __pyx_t_17 * __pyx_v_angles_v.strides[0]) ) + __pyx_t_18 * __pyx_v_angles_v.strides[1]) )))), (&(*((double *) ( /* dim=0 */ (__pyx_v_loss.data + __pyx_t_19 * __pyx_v_loss.strides[0]) )))), __pyx_v_amount, __pyx_v_num_of_dir, __pyx_v_no_spread);
 
-  /* "bonndit/utilc/myext.pyx":20
+  /* "bonndit/utilc/myext.pyx":28
  *         minimize_watson_mult_o4(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)
  * 
  * cdef void mw_openmp_mult_o6(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
@@ -2722,7 +2813,7 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o6(__Pyx_memviewslice 
   /* function exit code */
 }
 
-/* "bonndit/utilc/myext.pyx":23
+/* "bonndit/utilc/myext.pyx":31
  *         minimize_watson_mult_o6(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)
  * 
  * cdef void mw_openmp_mult_o8(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
@@ -2750,7 +2841,7 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o8(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_18;
   Py_ssize_t __pyx_t_19;
 
-  /* "bonndit/utilc/myext.pyx":24
+  /* "bonndit/utilc/myext.pyx":32
  * 
  * cdef void mw_openmp_mult_o8(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:
  *         minimize_watson_mult_o8(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)             # <<<<<<<<<<<<<<
@@ -2776,7 +2867,7 @@ static void __pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o8(__Pyx_memviewslice 
   __pyx_t_19 = 0;
   minimize_watson_mult_o8((&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_x.data + __pyx_t_1 * __pyx_v_x.strides[0]) ) + __pyx_t_2 * __pyx_v_x.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_signal.data + __pyx_t_3 * __pyx_v_signal.strides[0]) ) + __pyx_t_4 * __pyx_v_signal.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_est_signal.data + __pyx_t_5 * __pyx_v_est_signal.strides[0]) ) + __pyx_t_6 * __pyx_v_est_signal.strides[1]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dipy_v.data + __pyx_t_7 * __pyx_v_dipy_v.strides[0]) ) + __pyx_t_8 * __pyx_v_dipy_v.strides[1]) )))), (&(*((double *) ( /* dim=3 */ (( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_pysh_v.data + __pyx_t_9 * __pyx_v_pysh_v.strides[0]) ) + __pyx_t_10 * __pyx_v_pysh_v.strides[1]) ) + __pyx_t_11 * __pyx_v_pysh_v.strides[2]) ) + __pyx_t_12 * __pyx_v_pysh_v.strides[3]) )))), (&(*((double *) ( /* dim=3 */ (( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_rot_pysh_v.data + __pyx_t_13 * __pyx_v_rot_pysh_v.strides[0]) ) + __pyx_t_14 * __pyx_v_rot_pysh_v.strides[1]) ) + __pyx_t_15 * __pyx_v_rot_pysh_v.strides[2]) ) + __pyx_t_16 * __pyx_v_rot_pysh_v.strides[3]) )))), (&(*((double *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_angles_v.data + __pyx_t_17 * __pyx_v_angles_v.strides[0]) ) + __pyx_t_18 * __pyx_v_angles_v.strides[1]) )))), (&(*((double *) ( /* dim=0 */ (__pyx_v_loss.data + __pyx_t_19 * __pyx_v_loss.strides[0]) )))), __pyx_v_amount, __pyx_v_num_of_dir, __pyx_v_no_spread);
 
-  /* "bonndit/utilc/myext.pyx":23
+  /* "bonndit/utilc/myext.pyx":31
  *         minimize_watson_mult_o6(&x[0,0],&signal[0,0],&est_signal[0,0],&dipy_v[0,0],&pysh_v[0,0,0,0],&rot_pysh_v[0,0,0,0],&angles_v[0,0],&loss[0],amount,num_of_dir,no_spread)
  * 
  * cdef void mw_openmp_mult_o8(double[:,:] x, double[:,:] signal, double[:,:] est_signal, double[:,:] dipy_v, double[:,:,:,:] pysh_v, double[:,:,:,:] rot_pysh_v, double[:,:] angles_v, double[:] loss, int amount, int num_of_dir, int no_spread) nogil:             # <<<<<<<<<<<<<<
@@ -18054,6 +18145,7 @@ static int __Pyx_modinit_function_export_code(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__Pyx_modinit_function_export_code", 0);
   /*--- Function export code ---*/
+  if (__Pyx_ExportFunction("mw_openmp_mult", (void (*)(void))__pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult, "void (__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int, int, int, int)") < 0) __PYX_ERR(2, 1, __pyx_L1_error)
   if (__Pyx_ExportFunction("mw_openmp_mult_o4", (void (*)(void))__pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o4, "void (__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int, int, int)") < 0) __PYX_ERR(2, 1, __pyx_L1_error)
   if (__Pyx_ExportFunction("mw_openmp_mult_o6", (void (*)(void))__pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o6, "void (__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int, int, int)") < 0) __PYX_ERR(2, 1, __pyx_L1_error)
   if (__Pyx_ExportFunction("mw_openmp_mult_o8", (void (*)(void))__pyx_f_7bonndit_5utilc_5myext_mw_openmp_mult_o8, "void (__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int, int, int)") < 0) __PYX_ERR(2, 1, __pyx_L1_error)

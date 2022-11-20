@@ -344,3 +344,16 @@ cdef void set_zero_3d(double[:,:,:] v) nogil:
 			for k in range(o):
 				v[i,j,k] = 0
 
+cdef void flip_sh(double[:] fodf, double[:] fodf1):
+	fodf1[5]  = fodf[1+1]
+	fodf1[4]  = fodf[1+2]
+	fodf1[2]  = fodf[1+4]
+	fodf1[1]  = fodf[1+5]
+	fodf1[14] = fodf[1+6]
+	fodf1[13] = fodf[1+7]
+	fodf1[12] = fodf[1+8]
+	fodf1[11] = fodf[1+9]
+	fodf1[9]  = fodf[1+11]
+	fodf1[8]  = fodf[1+12]
+	fodf1[7]  = fodf[1+13]
+	fodf1[6]  = fodf[1+14]

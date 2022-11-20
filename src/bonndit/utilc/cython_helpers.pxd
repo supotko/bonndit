@@ -44,3 +44,4 @@ cdef:
 	bint bigger(double[:], double[:]) nogil
 	bint smaller(double[:], double[:]) nogil
 	bint point_validator(double , int) nogil
+	void flip_sh(double[:], double[:])
