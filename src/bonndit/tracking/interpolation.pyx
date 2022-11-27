@@ -516,22 +516,18 @@ cdef class TrilinearFODFWatson(Interpolation):
 		#	print("x before",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"fodf",self.signals[0,0],self.signals[0,1],self.signals[0,2])
 		mw_openmp_mult(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, self.lmax, 3, 0)
 
-		if self.loss[0] > 0.03:
+		if self.loss[0] > 0.001:
 			flip_sh(self.fodf, self.fodf1)
 			self.fodf1 = esh_to_sym(self.fodf1[:15])
 			approx_initial(self.length, self.best_dir_approx, tens, self.fodf1[:-1], self.rank, valsec, val,der, testv, anisoten, isoten)
 
 			for i in range(3):
 				mult_with_scalar(self.best_dir[i], 1/norm(self.best_dir_approx[:,i]), self.best_dir_approx[:,i])
-				print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
-				print("x after",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"loss",self.loss[0])
+				#print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
+				#print("x after",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"loss",self.loss[0])
 				# configure initial x for watson estimation
 				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 1.0
 				self.x_v2[0,i*4+1] = log((rand() / RAND_MAX) * (self.kappa_range[1] - self.kappa_range[0]) + self.kappa_range[0])
-
-				# flip x and z to align with sh:
-				self.best_dir[i,0] = -self.best_dir[i,0]
-				self.best_dir[i,2] = -self.best_dir[i,2]
 
 				cart2sphere(self.best_dir[i], self.x_v2[0,i*4+2:i*4+4]) # set initial directions in spherical (theta, phi)
 
