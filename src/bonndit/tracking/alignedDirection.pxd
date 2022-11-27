@@ -8,7 +8,7 @@ cdef class Probabilities:
 	cdef double expectation, sigma
 	cdef double[:] probability, angles, best_fit
 	cdef double[:,:] test_vectors
-	cdef void random_choice(self, double[:]) # nogil  except *
+	cdef int random_choice(self, double[:]) # nogil  except *
 	cdef void aligned_direction(self, double[:,:], double[:]) # nogil  except *
 	cdef void calculate_probabilities(self, double[:,:], double[:], double[:]) # nogil except *
 	cdef void calculate_watson_probabilities(self, double[:,:], double[:], double[:], double[:], double[:]) # nogil except *
@@ -36,7 +36,8 @@ cdef class Watson(Probabilities):
 	cdef double max_samplingangle
 	cdef double max_kappa
 	cdef double min_kappa
-	cdef void watson_config(self, double[:,:,:,:], double, double, double) # nogil except *
+	cdef bint prob_direction
+	cdef void watson_config(self, double[:,:,:,:], double, double, double, bint) # nogil except *
 	cdef double poly_kummer(self, double) # nogil  except *
 	cdef double poly_watson(self, double[:], double[:], double) # nogil except *
 	cdef void mc_random_direction(self, double[:], double[:], double) # nogil except *

@@ -228,7 +228,7 @@ cpdef tracking_all(vector_field, wm_mask, seeds, tracking_parameters, postproces
 		directionGetter = Deterministic2(tracking_parameters['expectation'], tracking_parameters['variance'])
 	elif tracking_parameters['prob'] == "Watson":
 		temp_watson = Watson(tracking_parameters['expectation'], tracking_parameters['variance'])
-		temp_watson.watson_config(kappa_field, tracking_parameters['maxsamplingangle'], tracking_parameters['maxkappa'], tracking_parameters['minkappa'])
+		temp_watson.watson_config(kappa_field, tracking_parameters['maxsamplingangle'], tracking_parameters['maxkappa'], tracking_parameters['minkappa'], tracking_parameters['prob_direction'])
 		directionGetter = temp_watson
 	else:
 		logging.error('Gaussian or Laplacian or Scalar are available so far. ')

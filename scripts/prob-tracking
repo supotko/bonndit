@@ -173,6 +173,7 @@ def main():
 	parser.add_argument('--maxsamplingangle', help='For Watson fitting: max angle to watson peak to randomly sample from.', default=90)
 	parser.add_argument('--maxkappa', help='For Watson fitting: max kappa value to sample from, higher values get clipped', default=80)
 	parser.add_argument('--minkappa', help='For Watson fitting: min kappa value to sample from, if lower the tracking is stopped', default=1)
+	parser.add_argument('--watsonprobdirselection', help='If added, in the Watson direction selection the distribution is chosen as in ScalarNew followed by the sampling.', action='store_true')
 
 	parser.add_argument('-v', '--verbose', default=True)
 	parser.add_argument('-r', '--exclusion', default=argparse.SUPPRESS)
@@ -313,7 +314,8 @@ def main():
 		'sw_save': int(args.sw_save),
 		'maxsamplingangle' : float(args.maxsamplingangle),
 		'maxkappa' : float(args.maxkappa),
-		'minkappa' : float(args.minkappa)
+		'minkappa' : float(args.minkappa),
+		'prob_direction': args.watsonprobdirselection
 	}
 	postprocessing = {
 		'inclusion': np.loadtxt(args.inclusion) if "inclusion" in args else "",

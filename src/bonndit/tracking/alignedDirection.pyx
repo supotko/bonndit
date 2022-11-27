@@ -56,13 +56,14 @@ cdef class Probabilities:
 				self.angles[i] = 180
 				mult_with_scalar(self.test_vectors[i], 0, vectors[i])
 
-	cdef void random_choice(self, double[:] direction) : # nogil  except *:
+	cdef int random_choice(self, double[:] direction) : # nogil  except *:
 		"""
 
 		@param direction:
 		@return:
 		"""
 		cdef double best_choice = rand() / RAND_MAX
+		cdef int chosen_idx = 0
 	#	with gil:
 	#		print(*self.probability)
 		if sum_c(self.probability) != 0:
@@ -73,23 +74,26 @@ cdef class Probabilities:
 				mult_with_scalar(self.best_fit, 1, self.test_vectors[0])
 				self.chosen_prob = self.probability[0]
 				self.chosen_angle = self.angles[0]
+				chosen_idx = 0
 			elif best_choice < self.probability[0] + self.probability[1]:
 				mult_with_scalar(self.best_fit, 1, self.test_vectors[1])
 				self.chosen_prob = self.probability[1]
 				self.chosen_angle = self.angles[1]
+				chosen_idx = 1
 			else:
 				mult_with_scalar(self.best_fit, 1, self.test_vectors[2])
 				self.chosen_prob = self.probability[2]
 				self.chosen_angle = self.angles[2]
+				chosen_idx = 2
 			self.old_fa = norm(self.best_fit)
 		else:
-
+			
 			mult_with_scalar(self.best_fit, 0, self.test_vectors[2])
 			self.chosen_angle = 0
 			self.chosen_prob = 0
 		#with gil:
 		#	print(*self.probability, ' and I chose ', self.chosen_prob, ' where the angle are ', *self.angles, ' I chose ', self.chosen_angle)
-
+		return chosen_idx
 
 
 	cdef void calculate_probabilities(self, double[:,:] vectors, double[:] direction, double[:] point) : # nogil except *:
@@ -226,11 +230,12 @@ cdef class Deterministic(Probabilities):
 		self.chosen_angle = self.angles[min_index]
 
 cdef class Watson(Probabilities):
-	cdef void watson_config(self, double[:,:,:,:] kappa_field, double max_samplingangle, double max_kappa, double min_kappa) :#nogil  except *:
+	cdef void watson_config(self, double[:,:,:,:] kappa_field, double max_samplingangle, double max_kappa, double min_kappa, bint prob_direction) :#nogil  except *:
 		self.kappa_field = kappa_field
 		self.max_samplingangle = max_samplingangle
 		self.max_kappa = max_kappa
 		self.min_kappa = min_kappa
+		self.prob_direction = prob_direction
 
 	cdef double poly_kummer(self, double kappa) :#nogil  except *:
 		return exp(kappa)/sqrt(kappa) * dawsn(sqrt(kappa))
@@ -265,15 +270,24 @@ cdef class Watson(Probabilities):
 		"""
 		cdef int i, min_index=0
 		cdef double s, min_angle=0, norm_of_test, mc_angle = 360
-
 		cdef double kappa_value
 
 		self.aligned_direction(vectors, direction)
-		for i in range(3):
-			if sum_c(vectors[i]) == sum_c(vectors[i]) and sum_c(vectors[i])!=0:
-				if self.angles[i] < min_angle or i==0:
-					min_angle=self.angles[i]
-					min_index=i
+		
+		if self.prob_direction:
+			for i in range(3):
+				if sum_c(vectors[i]) == sum_c(vectors[i]):
+					self.probability[i] = pow(cos(self.angles[i]/180*pi),self.sigma)*norm(self.test_vectors[i])
+				else:
+					self.probability[i] = 0
+
+			min_index = self.random_choice(direction)
+		else:
+			for i in range(3):
+				if sum_c(vectors[i]) == sum_c(vectors[i]) and sum_c(vectors[i])!=0:
+					if self.angles[i] < min_angle or i==0:
+						min_angle=self.angles[i]
+						min_index=i
 
 		kappa_value = self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))]
 
@@ -329,15 +343,24 @@ cdef class Watson(Probabilities):
 		"""
 		cdef int i, min_index=0
 		cdef double s, min_angle=0, norm_of_test, mc_angle = 360
-
 		cdef double kappa_value
 
 		self.aligned_direction(vectors, direction)
-		for i in range(3):
-			if sum_c(vectors[i]) == sum_c(vectors[i]) and sum_c(vectors[i])!=0:
-				if self.angles[i] < min_angle or i==0:
-					min_angle=self.angles[i]
-					min_index=i
+		
+		if self.prob_direction:
+			for i in range(3):
+				if sum_c(vectors[i]) == sum_c(vectors[i]):
+					self.probability[i] = pow(cos(self.angles[i]/180*pi),self.sigma)*norm(self.test_vectors[i])
+				else:
+					self.probability[i] = 0
+
+			min_index = self.random_choice(direction)
+		else:
+			for i in range(3):
+				if sum_c(vectors[i]) == sum_c(vectors[i]) and sum_c(vectors[i])!=0:
+					if self.angles[i] < min_angle or i==0:
+						min_angle=self.angles[i]
+						min_index=i
 
 		kappa_value = kappas[min_index]
 
