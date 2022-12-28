@@ -239,7 +239,6 @@ cdef class Watson(Probabilities):
 
 	cdef double poly_kummer(self, double kappa) :#nogil  except *:
 		return exp(kappa)/sqrt(kappa) * dawsn(sqrt(kappa))
-		#return 3.52113645e+00 + kappa*(-3.13883527e+01 + kappa*(1.25022169e+02 + kappa*(-2.32549061e+02 + kappa*(2.47116824e+02 + kappa*(-1.66808904e+02 + kappa*(7.65540870e+01 + kappa*(-2.49902824e+01 + kappa*(5.98438651e+00 + kappa*(-1.07327464e+00 + kappa*(1.46034113e-01 + kappa*(-1.51685928e-02 + kappa*(1.20240009e-03 + kappa*(-7.21893666e-05 + kappa*(3.22742537e-06 + kappa*(-1.04170221e-07 + kappa*(2.29586418e-09 + kappa*(-3.09649360e-11 + kappa*(1.93236159e-13))))))))))))))))))
 
 	cdef double poly_watson(self, double[:] x, double[:] mu, double kappa) :#nogil  except *:
 		cdef double M = 4*pi*self.poly_kummer(kappa)
@@ -304,9 +303,7 @@ cdef class Watson(Probabilities):
 		while mc_angle > self.max_samplingangle:
 			self.mc_random_direction(self.best_fit, 
 								 self.test_vectors[min_index], 
-								 #self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))])
 								 min(self.max_kappa,kappa_value))
-								 #max(8, min(20,self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))]+8)))
 		
 			# flip direction if > 90:
 			if scalar(self.best_fit, self.test_vectors[min_index]) < 0:
@@ -318,19 +315,10 @@ cdef class Watson(Probabilities):
 			mc_angle = clip(scalar(self.best_fit, self.test_vectors[min_index])/(norm(self.best_fit)*(norm(self.test_vectors[min_index]))), -1,1)
 			# convert to degrees
 			mc_angle = acos(mc_angle)/pi*180
-			#print(mc_angle)
-
-		#with gil:
-			#print('Point', point[0], point[1], point[2], self.test)
-			#print('Point', point[0], point[1], point[2], int(round(point[0])), int(round(point[1])), int(round(point[2])), self.kappa_field[0, int(round(point[0])), int(round(point[1])), int(round(point[2]))])
-			#print(angle_deg(self.best_fit, self.test_vectors[min_index]), norm(self.test_vectors[min_index]), '   ', self.best_fit[0], self.best_fit[1], self.best_fit[2], '  ', self.test_vectors[min_index][0], self.test_vectors[min_index][1], self.test_vectors[min_index][2])
-
-		#mult_with_scalar(self.best_fit, 1, self.test_vectors[min_index])
 
 		# reset to original length
 		mult_with_scalar(self.best_fit, norm_of_test, self.best_fit)
 
-		#self.chosen_prob = ((max(8, min(20,self.kappa_field[min_index, int(round(point[0])), int(round(point[1])), int(round(point[2]))]+8))) - 8) / 12.
 		self.chosen_prob = min(self.max_kappa,kappa_value)
 		self.chosen_angle = self.angles[min_index]
 
@@ -388,13 +376,6 @@ cdef class Watson(Probabilities):
 			mc_angle = clip(scalar(self.best_fit, self.test_vectors[min_index])/(norm(self.best_fit)*(norm(self.test_vectors[min_index]))), -1,1)
 			# convert to degrees
 			mc_angle = acos(mc_angle)/pi*180
-
-		#with gil:
-			#print('Point', point[0], point[1], point[2], self.test)
-			#print('Point', point[0], point[1], point[2], int(round(point[0])), int(round(point[1])), int(round(point[2])), self.kappa_field[0, int(round(point[0])), int(round(point[1])), int(round(point[2]))])
-			#print(angle_deg(self.best_fit, self.test_vectors[min_index]), norm(self.test_vectors[min_index]), '   ', self.best_fit[0], self.best_fit[1], self.best_fit[2], '  ', self.test_vectors[min_index][0], self.test_vectors[min_index][1], self.test_vectors[min_index][2])
-
-		#mult_with_scalar(self.best_fit, 1, self.test_vectors[min_index])
 
 		# reset to original length
 		mult_with_scalar(self.best_fit, norm_of_test, self.best_fit)

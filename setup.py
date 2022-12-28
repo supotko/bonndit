@@ -16,11 +16,11 @@ with open('HISTORY.rst') as history_file:
 
 suite_sparse_libs  = ['lapack', 'ccolamd', 'spqr', 'cholmod', 'colamd','camd', 'amd', 'suitesparseconfig']
 ceres_libs         = ['glog', 'gflags']
-watson_libraries   = ceres_libs + suite_sparse_libs + ['pthread', 'fftw3', 'm', 'Ceres_Cython']
+watson_libraries   = ceres_libs + suite_sparse_libs + ['pthread', 'fftw3', 'm', 'watsonfit']
 
 ext_modules = [
-	Extension("bonndit.utilc.myext",
-        sources=["src/bonndit/utilc/myext.pyx"],
+	Extension("bonndit.utilc.watsonfitwrapper",
+        sources=["src/bonndit/utilc/watsonfitwrapper.pyx"],
         include_dirs=[".",numpy.get_include(),"/usr/lib"],
         libraries=watson_libraries,
         language="c++",

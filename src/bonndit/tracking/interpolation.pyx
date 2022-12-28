@@ -25,7 +25,7 @@ from libc.time cimport time
 from bonndit.utilc.cython_helpers cimport fa, dctov, dinit
 from bonndit.utilc.blas_lapack cimport *
 from bonndit.utils.esh import esh_to_sym
-from bonndit.utilc.myext cimport mw_openmp_mult
+from bonndit.utilc.watsonfitwrapper cimport mw_openmp_mult
 
 DTYPE = np.float64
 cdef double _lambda_min = 0.1
@@ -333,9 +333,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 		self.empty = np.zeros((kwargs['data'].shape[0]-1,))
 		self.amount = 1
 		self.dj = np.zeros((self.lmax+1,self.lmax+1,self.lmax+1))
-		#self.x_v = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
-		#self.signals = np.array([[ 0.0667792 , -0.00764293, -0.00308147, -0.00726303, -0.00556099,-0.00397964, -0.01252561, -0.01570279,  0.00730777, -0.03085464, 0.05140559, -0.00341419,  0.01492144,  0.01563105,  0.0043892 ]])
-		self.x_v2 = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]]) #nonzero_csd_init[:amount].copy()
+		self.x_v2 = np.array([[ 2.45448036,  3.81193276,  0.21720971, -0.01643096,  4.84025163,3.43986788,  1.38213121,  1.40086381,  3.80655244,  4.42389366,1.24552913, -2.84815265]])
 		self.x_v = np.zeros((self.amount,12))
 		self.signals = np.zeros((self.amount,kwargs['data'].shape[0]-1))
 		self.loss = np.zeros(self.amount)
@@ -402,7 +400,6 @@ cdef class TrilinearFODFWatson(Interpolation):
 		self.dist = np.zeros((3,), dtype=DTYPE)
 		self.r = kwargs['r']
 		self.rank = kwargs['rank']
-		#print(self.sigma_2, self.sigma_1, self.r)
 
 
 	cdef void trilinear(self, double[:] point) : # nogil except *:
@@ -470,22 +467,18 @@ cdef class TrilinearFODFWatson(Interpolation):
 		if self.fodf[0] == 0:
 			return -1
 		set_zero_matrix(tens)
-	#	set_zero_vector(valsec)
-	#	set_zero_vector(val)
 
 		# if no previous directions are given (initial state) use low rank approx for initial directions
 		if norm(self.next_dir) == 0:
-			#with gil:
 			flip_sh(self.fodf, self.fodf1)
 			self.fodf1 = esh_to_sym(self.fodf1[:15])
 			approx_initial(self.length, self.best_dir_approx, tens, self.fodf1[:-1], self.rank, valsec, val,der, testv, anisoten, isoten)
 
 			for i in range(3):
 				mult_with_scalar(self.best_dir[i], 1/norm(self.best_dir_approx[:,i]), self.best_dir_approx[:,i])
-				#with gil:
-				#	print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
+
 				# configure initial x for watson estimation
-				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 1.0
+				self.x_v2[0,i*4] = norm(self.best_dir_approx[:,i])#(rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 1.0
 				self.x_v2[0,i*4+1] = log((rand() / RAND_MAX) * (self.kappa_range[1] - self.kappa_range[0]) + self.kappa_range[0])
 
 				# flip x and z to align with sh:
@@ -493,27 +486,10 @@ cdef class TrilinearFODFWatson(Interpolation):
 				self.best_dir[i,2] = -self.best_dir[i,2]
 
 				cart2sphere(self.best_dir[i], self.x_v2[0,i*4+2:i*4+4]) # set initial directions in spherical (theta, phi)
-			
-			#with gil:
-			#print("NEW STREAMLINE")
-			#print("NEW VALS",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
-
-
-		#with gil:
-		#	print(self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
 		
-		# with gil:
-		# 	print("x before",self.x_v[0],self.x_v[1],self.x_v[2],self.x_v[3],"fodf",self.fodf[1],self.fodf[2],self.fodf[3])
-		# #mw_openmp_single_o4c(self.x_v, self.fodf[1:], self.est_signal_v, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss_v, 3)
-		# mw_openmp_single_o4c(self.x_v, self.signal_v, self.est_signal_v, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss_v, 3)
-
-		# with gil:
-		# 	print("x after",self.x_v[0],self.x_v[1],self.x_v[2],self.x_v[3],"loss",self.loss_v[0])
 		for i in range(self.data.shape[0]-1):
 			self.signals[0,i] = self.fodf[i+1]
 		
-		#with gil:
-		#	print("x before",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"fodf",self.signals[0,0],self.signals[0,1],self.signals[0,2])
 		mw_openmp_mult(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, self.lmax, 3, 0)
 
 		if self.loss[0] > 0.001:
@@ -523,20 +499,18 @@ cdef class TrilinearFODFWatson(Interpolation):
 
 			for i in range(3):
 				mult_with_scalar(self.best_dir[i], 1/norm(self.best_dir_approx[:,i]), self.best_dir_approx[:,i])
-				#print("first",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
-				#print("x after",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"loss",self.loss[0])
+
 				# configure initial x for watson estimation
-				self.x_v2[0,i*4] = (rand() / RAND_MAX) * (1.0 - 0.1) + 0.1 # weight init between 0.1 and 1.0
+				self.x_v2[0,i*4] = norm(self.best_dir_approx[:,i])
 				self.x_v2[0,i*4+1] = log((rand() / RAND_MAX) * (self.kappa_range[1] - self.kappa_range[0]) + self.kappa_range[0])
+
+				# flip x and z to align with sh:
+				self.best_dir[i,0] = -self.best_dir[i,0]
+				self.best_dir[i,2] = -self.best_dir[i,2]
 
 				cart2sphere(self.best_dir[i], self.x_v2[0,i*4+2:i*4+4]) # set initial directions in spherical (theta, phi)
 
 			mw_openmp_mult(self.x_v2, self.signals, self.est_signal, self.dipy_v, self.pysh_v, self.rot_pysh_v, self.angles_v, self.loss, self.amount, self.lmax, 3, 0)
-		#mw_openmp_single_o4c(self.x_v2[0], self.signals[0], self.est_signal[0], self.dipy_v[0], self.pysh_v[0], self.rot_pysh_v[0], self.angles_v[0], self.loss, 3)
-		#with gil:
-		#	print("x after",self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],"loss",self.loss[0])
-		#print(self.loss[0], self.x_v2[0,0],self.x_v2[0,1],self.x_v2[0,2],self.x_v2[0,3],self.x_v2[0,4],self.x_v2[0,5],self.x_v2[0,6],self.x_v2[0,7],self.x_v2[0,8],self.x_v2[0,9],self.x_v2[0,10],self.x_v2[0,11])
-
 
 		for i in range(3):
 			sphere2cart(self.x_v2[0,i*4+2:i*4+4], self.best_dir[i])
@@ -547,15 +521,7 @@ cdef class TrilinearFODFWatson(Interpolation):
 
 			self.weights[i] = fabs(self.x_v2[0,i*4])
 			self.kappas[i] = exp(self.x_v2[0,i*4+1])
-			#with gil:
-			#	print("more",self.best_dir[i,0],self.best_dir[i,1],self.best_dir[i,2])
 
-		# for i in range(3):
-		# 	mult_with_scalar(self.best_dir[i], pow(self.length[i], 1/4), self.best_dir_approx[:,i])
-		# 	with gil:
-		# 		print(norm(self.best_dir_approx[:,i]))
-
-		#self.prob.calculate_probabilities(self.best_dir, old_dir, point)
 		self.prob.calculate_watson_probabilities(self.best_dir, self.kappas, self.weights, old_dir, self.point_index[:3])
 		cblas_dcopy(3, &self.prob.best_fit[0], 1, &self.next_dir[0],1)
 		return 0
