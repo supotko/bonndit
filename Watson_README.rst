@@ -1,6 +1,6 @@
-==============
-Waston fitting
-==============
+=========================
+Waston Fitting & Tracking
+=========================
 
 Installation with bonndit
 -------------------------
@@ -164,13 +164,13 @@ Tracking with pre-computed Watson fit:
 
 .. code-block:: console
 
-    prob-tracking --i /path/to/fodf_and_wmvolume/ --infile /outputfolder/watson_tracking_data.nrrd --seedpoints /path/to/seedPointFile.pts -o /outputfolder/output.tck --prob Watson --interpolation FACT --wmmin 0.4 --rank 3
+    python prob-tracking --i /path/to/fodf_and_wmvolume/ --infile /outputfolder/watson_tracking_data.nrrd --seedpoints /path/to/seedPointFile.pts -o /outputfolder/output.tck --prob Watson --interpolation FACT --wmmin 0.4 --rank 3
 
 Tracking with fODF Interpolation:
 
 .. code-block:: console
     
-    prob-tracking --i /outfolder_sh/ --infile /outputfolder/watson_tracking_data.nrrd --wmvolume /path/to/wmvolume.nrrd --seedpoints /path/to/seedPointFile.pts -o /outputfolder/output.tck --prob Watson --interpolation TrilinearFODFWatson --wmmin 0.4 --rank 3 --dist 0 --var 6 --exp 3
+    python prob-tracking --i /outfolder_sh/ --infile /outputfolder/watson_tracking_data.nrrd --wmvolume /path/to/wmvolume.nrrd --seedpoints /path/to/seedPointFile.pts -o /outputfolder/output.tck --prob Watson --interpolation TrilinearFODFWatson --wmmin 0.4 --rank 3 --dist 0 --var 6 --exp 3
 
 Custom parameters for the Watson tracking:
 

@@ -73,7 +73,7 @@ class WatsonFit(object):
         if self.verbose:
             logging.info("Watson fitting")
         start = timeit.default_timer()
-        watsonfit.mw_openmp_mult(*fitting_params)
+        watsonfit.mw_openmp_mult_p(*fitting_params)
         
         print("\nRuntime:", timeit.default_timer() - start, "seconds")
         print(self.watson_model.loss.mean())
@@ -83,7 +83,7 @@ class WatsonFit(object):
             if self.verbose:
                 logging.info("Outlier handling")
             outlier_params = self.watson_model.outlier_params(O_LIMIT[self.shorder])
-            watsonfit.mw_openmp_mult(*outlier_params)
+            watsonfit.mw_openmp_mult_p(*outlier_params)
             print("\n")
 
         # post processing
@@ -297,7 +297,7 @@ class WatsonResultModel(object):
         kappa_angle = np.radians(CONF_90(kappa_with_limit))
         
         # combine values
-        cart_results = np.hstack([  confidence[:,np.newaxis], self._reshaped_kappa[:,np.newaxis], 
+        cart_results = np.hstack([  confidence[:,np.newaxis], confidence[:,np.newaxis], 
                                     kappa_angle[:,np.newaxis], scaled_angles]).reshape(-1,self.rank,6)
 
         # reshape
@@ -313,7 +313,7 @@ class WatsonResultModel(object):
 
         # save to nrrd output files for all directions
         create_missing_folders(filename)
-        for i in range(3):
+        for i in range(self.rank):
             if self.verbose:
                 logging.info("Saving " + filename.removesuffix('.nrrd') + str(i+1) + ".nrrd")
             cart_results_one = cart_results[:,i,...]

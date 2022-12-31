@@ -116,3 +116,9 @@ ENV/
 # notebook experiments
 notebooks/experiments
 notebooks/experiments/*
+
+# watson cmake
+scripts/CMakeFiles/*
+scripts/CMakeCache.txt
+scripts/cmake_install.cmake
+scripts/Makefile
