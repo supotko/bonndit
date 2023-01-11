@@ -8,6 +8,13 @@ To install bonndit with the Watson fitting and Watson tracking, run the followin
 
 .. code-block:: console
 
+    cd build; cmake ..; sudo make install; cd ..
+    pip install .
+
+Alternative:
+
+.. code-block:: console
+
     cd build; cmake ..; make; cd ..
     sudo cp build/libwatsonfit.so /usr/lib
     sudo cp src/bonndit/utilc/watsonfit.h /usr/include/

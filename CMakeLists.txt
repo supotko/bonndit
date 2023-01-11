@@ -28,3 +28,9 @@ target_link_libraries(watsonfit
 target_link_libraries(watsonfit PRIVATE OpenMP::OpenMP_CXX)
 target_link_libraries(watsonfit PRIVATE fftw3)
 target_link_libraries(watsonfit PRIVATE cerf)
+
+set_target_properties(watsonfit PROPERTIES PUBLIC_HEADER "src/bonndit/utilc/watsonfit.h")
+INSTALL(TARGETS watsonfit
+        LIBRARY DESTINATION /usr/lib
+        PUBLIC_HEADER DESTINATION /usr/include/
+)
