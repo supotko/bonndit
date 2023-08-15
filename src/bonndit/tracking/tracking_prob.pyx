@@ -96,6 +96,7 @@ cdef forward_tracking(double[:,:] paths,  Interpolation interpolate,
 	cdef int k, con
 	# thousand is max length for pathway
 	interpolate.prob.old_fa = 1
+	integrate.old_dir = np.zeros((3,))
 	validator.WM.reset()
 	for k in range((max_track_length-1)*save_steps):
 		# validate index and wm density.
@@ -298,7 +299,8 @@ cpdef tracking_all(vector_field, wm_mask, seeds, tracking_parameters, postproces
 				paths[k,j, 0, 1,l] = seeds[i][l]
 		#	if "Deterministic" in tracking_parameters['prob'] or tracking_parameters['ukf'] == "LowRank":
 			for l in range(3):
-				paths[k,j, 0, 0,l] +=  np.random.normal(0,1)
+				paths[k,j, 0, 0,l] +=  np.random.uniform(-0.5,0.5)
+
 				paths[k,j, 0, 1,l] = paths[k,j, 0, 0,l]
 
 		if saving['features']['seedpoint'] >= 0:
